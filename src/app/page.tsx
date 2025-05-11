@@ -1,102 +1,210 @@
 import Image from "next/image";
+import { ProjectCard } from "@/components/project-card";
+import { SkillBadge } from "@/components/skill-badge";
+import { ContactForm } from "@/components/contact-form";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-white">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm border-b border-[#e5e7eb]">
+        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
+          <h2 className="text-xl font-bold tracking-tighter">YOUR NAME</h2>
+          <ul className="hidden md:flex space-x-8">
+            <li><a href="#about" className="text-[#6b7280] hover:text-black transition-colors">About</a></li>
+            <li><a href="#projects" className="text-[#6b7280] hover:text-black transition-colors">Projects</a></li>
+            <li><a href="#skills" className="text-[#6b7280] hover:text-black transition-colors">Skills</a></li>
+            <li><a href="#contact" className="text-[#6b7280] hover:text-black transition-colors">Contact</a></li>
+          </ul>
+          <button className="md:hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-menu"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+          </button>
         </div>
+      </nav>
+      
+      {/* Main Content */}
+      <main className="container mx-auto px-6 pt-24 pb-16">
+        {/* Hero Section */}
+        <section className="py-16 md:py-32 flex flex-col-reverse md:flex-row items-center gap-12 md:gap-20">
+          <div className="flex-1 space-y-6">
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter leading-tight">
+              Creative
+              <br />
+              Developer
+              <br />
+              <span className="text-gray-400">& Designer</span>
+            </h1>
+            <p className="text-lg text-gray-600 max-w-md">
+              I craft beautiful digital experiences and create engaging interfaces that people love to use.
+            </p>
+            <div className="pt-4">
+              <a 
+                href="#contact" 
+                className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium text-sm hover:bg-gray-800 transition-colors"
+              >
+                Get in touch
+              </a>
+            </div>
+          </div>
+          <div className="relative w-full md:w-1/2 aspect-square">
+            <div className="absolute inset-0 bg-gray-100 rounded-2xl overflow-hidden">
+              <Image
+                src="/profile-photo.jpg"
+                alt="Your Name"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
+                priority
+              />
+            </div>
+          </div>
+        </section>
+        
+        {/* About Section */}
+        <section id="about" className="py-20 flex flex-col md:flex-row gap-16">
+          <div className="flex-1">
+            <h2 className="text-3xl font-bold tracking-tight mb-8">About Me</h2>
+            <div className="space-y-4 text-gray-600">
+              <p>
+                Hello! I'm [YOUR NAME], a passionate developer and designer with a focus on creating clean, 
+                functional, and visually appealing digital products.
+              </p>
+              <p>
+                With [X] years of experience in the industry, I've developed a strong set of skills that 
+                allow me to build comprehensive solutions from concept to deployment.
+              </p>
+              <p>
+                I believe in the power of minimalist design, attention to detail, and creating 
+                user-centered experiences that solve real problems.
+              </p>
+            </div>
+          </div>
+          <div className="flex-1 space-y-6">
+            <div className="space-y-2">
+              <h3 className="text-xl font-medium">Education</h3>
+              <p className="text-gray-600">B.S. Computer Science, Johns Hopkins University (2022- 2026)</p>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-medium">Experience</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="font-medium">Software Development Engineer Intern - Amazon</p>
+                  <p className="text-gray-600 text-sm">June 2025 - August 2025</p>
+                </div>
+                <div>
+                  <p className="font-medium">Software Engineer Intern - Samsung Electronics</p>
+                  <p className="text-gray-600 text-sm">June 2024 - August 2024</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        {/* Projects Section */}
+        <section id="projects" className="py-20">
+          <h2 className="text-3xl font-bold tracking-tight mb-8">Selected Projects</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <ProjectCard 
+              title="Project One"
+              description="A minimalist e-commerce platform focused on user experience and conversion optimization."
+              image="/project1.jpg"
+              tags={["Next.js", "Tailwind CSS", "Stripe"]}
+              link="#"
+            />
+            <ProjectCard 
+              title="Project Two"
+              description="A dashboard application for monitoring real-time data with customizable widgets."
+              image="/project2.jpg"
+              tags={["React", "D3.js", "Firebase"]}
+              link="#"
+            />
+            <ProjectCard 
+              title="Project Three"
+              description="A mobile-first web application for tracking fitness goals and progress."
+              image="/project3.jpg"
+              tags={["Next.js", "TypeScript", "MongoDB"]}
+              link="#"
+            />
+            <ProjectCard 
+              title="Project Four"
+              description="A content management system built for performance and ease of use."
+              image="/project4.jpg"
+              tags={["Next.js", "Prisma", "PostgreSQL"]}
+              link="#"
+            />
+          </div>
+        </section>
+        
+        {/* Skills Section */}
+        <section id="skills" className="py-20">
+          <h2 className="text-3xl font-bold tracking-tight mb-8">Skills & Technologies</h2>
+          <div className="flex flex-wrap gap-3">
+            <SkillBadge name="JavaScript" />
+            <SkillBadge name="TypeScript" />
+            <SkillBadge name="React" />
+            <SkillBadge name="Next.js" />
+            <SkillBadge name="Tailwind CSS" />
+            <SkillBadge name="Node.js" />
+            <SkillBadge name="Express" />
+            <SkillBadge name="MongoDB" />
+            <SkillBadge name="PostgreSQL" />
+            <SkillBadge name="GraphQL" />
+            <SkillBadge name="Figma" />
+            <SkillBadge name="Adobe XD" />
+            <SkillBadge name="UI/UX Design" />
+            <SkillBadge name="Responsive Design" />
+            <SkillBadge name="Git" />
+            <SkillBadge name="CI/CD" />
+          </div>
+        </section>
+        
+        {/* Contact Section */}
+        <section id="contact" className="py-20">
+          <h2 className="text-3xl font-bold tracking-tight mb-8">Get In Touch</h2>
+          <div className="flex flex-col md:flex-row gap-16">
+            <div className="flex-1 space-y-6">
+              <p className="text-gray-600">
+                I'm currently available for freelance work and interesting projects.
+                If you have a project that needs some creative coding, I'd love to hear about it.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                  <span className="text-gray-600">hello@yourname.com</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400"><path d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M12 18h.01"/></svg>
+                  <span className="text-gray-600">+1 (555) 123-4567</span>
+                </div>
+              </div>
+              <div className="pt-8 flex gap-4">
+                <a href="#" className="text-gray-400 hover:text-black transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                </a>
+                <a href="#" className="text-gray-400 hover:text-black transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+                </a>
+                <a href="#" className="text-gray-400 hover:text-black transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+                </a>
+                <a href="#" className="text-gray-400 hover:text-black transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
+                </a>
+              </div>
+            </div>
+            <div className="flex-1">
+              <ContactForm />
+            </div>
+          </div>
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      
+      {/* Footer */}
+      <footer className="bg-gray-50 py-12">
+        <div className="container mx-auto px-6 text-center text-gray-600">
+          <p>© {new Date().getFullYear()} Your Name. All rights reserved.</p>
+          <p className="text-sm mt-2">Designed and built with Next.js and Tailwind CSS</p>
+        </div>
       </footer>
     </div>
   );
