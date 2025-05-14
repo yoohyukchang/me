@@ -22,9 +22,26 @@ export default function About() {
         </div>
       </div>
       <div className="flex-1 space-y-8">
-        <div className="space-y-2">
+        <div className="space-y-4">
           <h3 className="text-xl font-medium">Education</h3>
-          <p className="text-gray-600">B.S. Computer Science, Johns Hopkins University (2022- 2026)</p>
+          
+          {/* University */}
+          <div className="flex items-center gap-4 p-2">
+            <div className="w-16 h-16 flex items-center justify-center flex-shrink-0">
+              <Image 
+                src="/logos/johns_hopkins.png" 
+                alt="Johns Hopkins University logo" 
+                width={64}
+                height={64}
+                className="object-contain"
+              />
+            </div>
+            <div>
+              <p className="font-medium text-black">B.S. Computer Science</p>
+              <p className="text-gray-600">Johns Hopkins University</p>
+              <p className="text-gray-500 text-sm mt-1">2022 - 2026</p>
+            </div>
+          </div>
         </div>
         
         <div className="space-y-4">
@@ -34,12 +51,12 @@ export default function About() {
           <div className="space-y-5">
             {/* Amazon Experience */}
             <div className="flex items-center gap-4 p-2 group">
-              <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+              <div className="w-14 h-14 flex items-center justify-center flex-shrink-0">
                 <Image 
-                  src="/company-logos/amazon.png" 
+                  src="/logos/amazon.png" 
                   alt="Amazon logo" 
-                  width={40}
-                  height={40}
+                  width={56}
+                  height={56}
                   className="object-contain"
                 />
               </div>
@@ -52,17 +69,17 @@ export default function About() {
             
             {/* Samsung Experience */}
             <div className="flex items-center gap-4 p-2 group">
-              <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+              <div className="w-14 h-14 flex items-center justify-center flex-shrink-0">
                 <Image 
-                  src="/company-logos/samsung.png" 
+                  src="/logos/samsung.png" 
                   alt="Samsung logo" 
-                  width={40} 
-                  height={40}
+                  width={56}
+                  height={56}
                   className="object-contain"
                 />
               </div>
               <div>
-                <p className="font-medium text-black">Software Engineer Intern</p>
+                <p className="font-medium text-black">Machine Learning Engineer Intern</p>
                 <p className="text-gray-600">Samsung Electronics</p>
                 <p className="text-gray-500 text-sm mt-1">June 2024 - August 2024</p>
               </div>
