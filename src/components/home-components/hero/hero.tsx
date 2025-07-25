@@ -25,7 +25,7 @@ export default function Hero() {
       <div className="relative w-full md:w-1/2 aspect-square">
         <div className="absolute inset-0 bg-gray-100 rounded-2xl overflow-hidden">
           <Image
-            src="/profile-photo.jpg"
+            src="/profile/profile-photo.jpg"
             alt="Yoohyuk Chang"
             fill
             sizes="(max-width: 768px) 100vw, 50vw"

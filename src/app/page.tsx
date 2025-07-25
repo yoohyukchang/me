@@ -12,7 +12,7 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       <Navbar />
       
-      <main className="container mx-auto px-6 pt-24 pb-16">
+      <main className="container mx-auto px-6 pb-16">
         <Hero />
         <About />
         <ProjectsPreview />

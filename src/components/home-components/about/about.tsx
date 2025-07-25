@@ -23,7 +23,7 @@ export default function About() {
       </div>
       <div className="flex-1 space-y-8">
         <div className="space-y-4">
-          <h3 className="text-xl font-medium">Education</h3>
+          <h3 className="text-xl font-bold">Education</h3>
           
           {/* University */}
           <div className="flex items-center gap-4 p-2">
@@ -45,7 +45,7 @@ export default function About() {
         </div>
         
         <div className="space-y-4">
-          <h3 className="text-xl font-medium">Experience</h3>
+          <h3 className="text-xl font-bold">Experience</h3>
           
           {/* Experience Cards */}
           <div className="space-y-5">
@@ -88,7 +88,7 @@ export default function About() {
         </div>
         
         <div className="space-y-2">
-          <h3 className="text-xl font-medium">Interests</h3>
+          <h3 className="text-xl font-bold">Interests</h3>
           <p className="text-gray-600">Software Development, Machine Learning, Photography, Running</p>
         </div>
       </div>

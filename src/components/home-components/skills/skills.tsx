@@ -4,6 +4,7 @@ import { SkillBadge } from "@/components/home-components/skills/skill-badge";
  * 
  * This section (function) is currently not in use. It's commented out in `src/app/page.tsx`.
  * Uncomment this part in the `page.tsx` to display this Skills section.
+ * Also The nav bar needs to be updated to have the 'Skills' section later.
  * 
  */
 

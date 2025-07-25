@@ -11,7 +11,7 @@ interface ProjectCardProps {
 
 export function ProjectCard({ title, description, image, tags, link }: ProjectCardProps) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-gray-100 hover-grow">
+    <div className="group relative overflow-hidden rounded-2xl border border-gray-300 hover-grow">
       <div className="relative h-64 w-full overflow-hidden">
         <Image
           src={image}
@@ -21,8 +21,9 @@ export function ProjectCard({ title, description, image, tags, link }: ProjectCa
           className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
       </div>
-      <div className="p-6 bg-white">
-        <h3 className="text-xl font-medium mb-2">{title}</h3>
+      <div className="p-6 bg-white relative">
+        <div className="absolute top-2 left-6 right-6 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+        <h3 className="text-xl font-bold mb-2">{title}</h3>
         <p className="text-gray-600 mb-4">{description}</p>
         <div className="flex flex-wrap gap-2 mb-6">
           {tags.map((tag) => (
