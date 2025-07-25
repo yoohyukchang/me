@@ -48,7 +48,7 @@ export default function ProjectsPreview() {
     return 'far-hidden';
   };
 
-  // Auto-play functionality (optional)
+  // Auto-play functionality
   useEffect(() => {
     const interval = setInterval(() => {
       if (!isAnimating) {
@@ -60,7 +60,7 @@ export default function ProjectsPreview() {
   }, [isAnimating]);
 
   return (
-    <section id="projects" className="py-20">
+    <section id="projects" className="py-30">
       <h2 className="text-3xl font-bold tracking-tight mb-8 text-center">
         Projects & Creations
       </h2>

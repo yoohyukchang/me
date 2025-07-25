@@ -1,4 +1,4 @@
-import { ContactForm } from "@/components/home-components/contact/contact-form";
+import { ContactForm } from "@/components/home-page-components/contact/contact-form";
 
 export default function Contact() {
   return (
@@ -7,7 +7,7 @@ export default function Contact() {
       <div className="flex flex-col md:flex-row gap-16">
         <div className="flex-1 space-y-6">
           <p className="text-gray-600">
-            Whether you want to discuss a project, share thoughts about a journal entry, 
+            Whether you want to discuss a project, share thoughts about a blog entry, 
             or just say hello, I'd love to hear from you!
           </p>
           <div className="space-y-4">

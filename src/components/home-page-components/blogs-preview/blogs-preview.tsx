@@ -1,7 +1,7 @@
-export default function JournalPreview() {
+export default function BlogPreview() {
   return (
-    <section id="journal" className="py-20">
-      <h2 className="text-3xl font-bold tracking-tight mb-8">Life Journal</h2>
+    <section id="blog" className="py-20">
+      <h2 className="text-3xl font-bold tracking-tight mb-8">Life Blogs</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-gray-50 p-6 rounded-xl">
           <p className="text-sm text-gray-400 mb-2">May 5, 2025</p>
@@ -34,8 +34,8 @@ export default function JournalPreview() {
         </div>
       </div>
       <div className="mt-8 text-center">
-        <a href="#" className="inline-block border border-black px-6 py-3 rounded-lg font-medium text-sm hover:bg-black hover:text-white transition-colors">
-          View all journal entries
+        <a href="/blogs" className="inline-block border border-black px-6 py-3 rounded-lg font-medium text-sm hover:bg-black hover:text-white transition-colors">
+          View all blog entries
         </a>
       </div>
     </section>

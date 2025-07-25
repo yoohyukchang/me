@@ -14,7 +14,7 @@ export const projectsData: Project[] = [
     description: "AI-driven analysis to help you navigate each stage of maternity care billing, from pregnancy through delivery and beyond.",
     image: "/projects/codahx/codahx-thumbnail.png",
     tags: ["Next.js", "Tailwind CSS", "Stripe"],
-    link: "#"
+    link: "https://www.codahx.com"
   },
   {
     id: "prostate-segmentation",
@@ -22,7 +22,7 @@ export const projectsData: Project[] = [
     description: "A dashboard application for monitoring real-time data with customizable widgets.",
     image: "/projects/prostate-segmentation/prostate-segmentation-thumbnail.png",
     tags: ["React", "D3.js", "Firebase"],
-    link: "#"
+    link: "https://drive.google.com/file/d/1WuoOK2rMWTmDD39PTFoEAoEXBx2hYG0a/edit"
   },
   {
     id: "ecommerce-platform",

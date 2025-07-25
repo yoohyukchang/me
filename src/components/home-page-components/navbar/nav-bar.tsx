@@ -6,7 +6,7 @@ export default function Navbar() {
         <ul className="hidden md:flex space-x-8">
           <li><a href="#about" className="text-[#6b7280] hover:text-black transition-colors">About</a></li>
           <li><a href="#projects" className="text-[#6b7280] hover:text-black transition-colors">Projects</a></li>
-          <li><a href="#journal" className="text-[#6b7280] hover:text-black transition-colors">Journal</a></li>
+          <li><a href="#blog" className="text-[#6b7280] hover:text-black transition-colors">Blog</a></li>
           {/* <li><a href="#skills" className="text-[#6b7280] hover:text-black transition-colors">Skills</a></li> */}
           <li><a href="#contact" className="text-[#6b7280] hover:text-black transition-colors">Contact</a></li>
         </ul>
