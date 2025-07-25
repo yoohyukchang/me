@@ -1,10 +1,13 @@
 import { blogsData } from "@/components/home-page-components/blogs-preview/blogs-data";
-import BlogCard from "@/components/blogs-page-components/blog-card";
+import FeaturedBlogCard from "@/components/blogs-page-components/featured-blog-card";
+import CompactBlogCard from "@/components/blogs-page-components/compact-blog-card";
 
 export default function BlogsPage() {
+  const [featuredPost, ...otherPosts] = blogsData;
+
   return (
     <main className="container mx-auto px-6 py-16">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 mt-10">
@@ -16,24 +19,41 @@ export default function BlogsPage() {
           </p>
         </div>
 
-        {/* Blog Feed */}
-        <div className="space-y-8">
-          {blogsData.map((blog) => (
-            <BlogCard key={blog.id} blog={blog} />
-          ))}
+        {/* Featured Post */}
+        <div className="mb-16">
+          <FeaturedBlogCard blog={featuredPost} />
         </div>
 
-        {/* Load More Section */}
-        <div className="text-center mt-16 pt-12 border-t border-gray-200">
-          <p className="text-gray-500 mb-6">
-            That's all for now! More posts coming soon.
-          </p>
-          <a 
-            href="/#contact" 
-            className="inline-block border border-black px-8 py-3 rounded-lg font-medium hover:bg-black hover:text-white transition-colors"
-          >
-            Get in touch
-          </a>
+        {/* Recent Posts Section */}
+        <div className="mb-16">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold tracking-tight">Recent Posts</h2>
+            <div className="h-px bg-gray-200 flex-1 ml-6"></div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {otherPosts.map((blog) => (
+              <CompactBlogCard key={blog.id} blog={blog} />
+            ))}
+          </div>
+        </div>
+
+        {/* Newsletter/Contact Section */}
+        <div className="text-center mt-20 pt-16 border-t border-gray-200">
+          <div className="max-w-lg mx-auto">
+            <h3 className="text-2xl font-bold mb-4">
+              Stay Updated
+            </h3>
+            <p className="text-gray-600 mb-8">
+              Get notified when I publish new posts about technology, career insights, and life experiences.
+            </p>
+            <a 
+              href="/#contact" 
+              className="inline-block border border-black px-8 py-3 rounded-lg font-medium hover:bg-black hover:text-white transition-colors"
+            >
+              Get in touch
+            </a>
+          </div>
         </div>
       </div>
     </main>

@@ -7,6 +7,7 @@ export interface BlogPost {
   readTime: string;
   tags: string[];
   slug: string;
+  image?: string;
 }
 
 export const blogsData: BlogPost[] = [
@@ -18,7 +19,8 @@ export const blogsData: BlogPost[] = [
     date: "May 5, 2025",
     readTime: "4 min read",
     tags: ["Internship", "Samsung", "Career", "Tech"],
-    slug: "summer-internship-reflections"
+    slug: "summer-internship-reflections",
+    image: "/blogs/samsung-internship/samsung-internship.jpg"
   },
   {
     id: 2,
