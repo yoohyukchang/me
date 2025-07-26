@@ -1,4 +1,5 @@
-import { BlogPost } from "@/components/home-page-components/blogs-preview/blogs-data";
+import { BlogPost } from "@/data/blogs-data/blogs-data";
+import Link from "next/link";
 import "./featured-blog-card.css";
 
 interface FeaturedBlogCardProps {
@@ -18,9 +19,9 @@ export default function FeaturedBlogCard({ blog }: FeaturedBlogCardProps) {
         </div>
         
         <h1 className="featured-blog-card-title">
-          <a href={`/blogs/${blog.slug}`} className="featured-blog-card-title-link">
+          <Link href={`/blogs/${blog.slug}`} className="featured-blog-card-title-link">
             {blog.title}
-          </a>
+          </Link>
         </h1>
         
         <p className="featured-blog-card-excerpt">{blog.excerpt}</p>
@@ -34,7 +35,7 @@ export default function FeaturedBlogCard({ blog }: FeaturedBlogCardProps) {
         </div>
         
         <div className="featured-blog-card-actions">
-          <a 
+          <Link 
             href={`/blogs/${blog.slug}`}
             className="featured-blog-card-link"
           >
@@ -52,9 +53,20 @@ export default function FeaturedBlogCard({ blog }: FeaturedBlogCardProps) {
                 d="M17 8l4 4m0 0l-4 4m4-4H3" 
               />
             </svg>
-          </a>
+          </Link>
         </div>
       </div>
+      
+      {blog.image && (
+        <div 
+          className="featured-blog-card-image"
+          style={{
+            backgroundImage: `url(${blog.image})`
+          }}
+        >
+          <div className="featured-blog-card-image-overlay"></div>
+        </div>
+      )}
     </article>
   );
 }

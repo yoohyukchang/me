@@ -1,4 +1,4 @@
-import { BlogPost } from "@/components/home-page-components/blogs-preview/blogs-data";
+import { BlogPost } from "@/data/blogs-data/blogs-data";
 import "./compact-blog-card.css";
 
 interface CompactBlogCardProps {

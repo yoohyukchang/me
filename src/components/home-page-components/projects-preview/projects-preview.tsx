@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { projectsData } from "./projects-data";
+import { projectsData } from "../../../data/projects-data/projects-data";
 import "./projects-preview.css";
 
 export default function ProjectsPreview() {

@@ -1,12 +1,14 @@
 .featured-blog-card {
-  background: linear-gradient(135deg, #faf8ff 0%, #f3f0ff 100%);
-  border-radius: 20px;
-  padding: 32px;
-  border: 1px solid #e9e5f5;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #f1f5f9;
   transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  display: flex;
+  min-height: 400px;
 }
 
 .featured-blog-card::before {
@@ -16,19 +18,50 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #a78bfa 0%, #8b5cf6 50%, #7c3aed 100%);
+  background: linear-gradient(90deg, #000000 0%, #374151 50%, #1f2937 100%);
+  z-index: 2;
 }
 
 .featured-blog-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  border-color: #d8b4fe;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  border-color: #e2e8f0;
 }
 
 .featured-blog-card-content {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  padding: 32px;
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 40px) 100%, 0 100%);
+  background: white;
+}
+
+.featured-blog-card-image {
+  flex: 0 0 45%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  margin-left: -40px;
+}
+
+.featured-blog-card-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.1) 0%,
+    rgba(0, 0, 0, 0.05) 50%,
+    rgba(0, 0, 0, 0.15) 100%
+  );
 }
 
 .featured-blog-card-meta {
@@ -53,7 +86,7 @@
 }
 
 .featured-blog-card-featured {
-  background: #8b5cf6;
+  background: #000000;
   color: white;
   padding: 4px 12px;
   border-radius: 12px;
@@ -123,7 +156,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #7c3aed;
+  color: #000000;
   font-weight: 600;
   font-size: 1rem;
   text-decoration: none;
@@ -133,8 +166,8 @@
 }
 
 .featured-blog-card-link:hover {
-  color: #5b21b6;
-  border-bottom-color: #a78bfa;
+  color: #374151;
+  border-bottom-color: #6b7280;
   transform: translateX(4px);
 }
 
@@ -150,7 +183,20 @@
 
 @media (max-width: 768px) {
   .featured-blog-card {
+    flex-direction: column;
+    min-height: auto;
+  }
+  
+  .featured-blog-card-content {
     padding: 24px;
+    clip-path: none;
+    order: 2;
+  }
+  
+  .featured-blog-card-image {
+    flex: 0 0 200px;
+    margin-left: 0;
+    order: 1;
   }
   
   .featured-blog-card-title {

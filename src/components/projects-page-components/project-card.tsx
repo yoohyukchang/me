@@ -1,4 +1,4 @@
-import { Project } from "@/components/home-page-components/projects-preview/projects-data";
+import { Project } from "@/data/projects-data/projects-data";
 import "./project-card.css";
 
 interface ProjectCardProps {

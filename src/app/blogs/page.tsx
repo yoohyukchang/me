@@ -1,4 +1,4 @@
-import { blogsData } from "@/components/home-page-components/blogs-preview/blogs-data";
+import { blogsData } from "@/data/blogs-data/blogs-data";
 import FeaturedBlogCard from "@/components/blogs-page-components/featured-blog-card";
 import CompactBlogCard from "@/components/blogs-page-components/compact-blog-card";
 
