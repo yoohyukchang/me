@@ -1,9 +1,9 @@
-import Hero from "@/components/home-page-components/hero/hero";
-import About from "@/components/home-page-components/about/about";
-import ProjectsPreview from "@/components/home-page-components/projects-preview/projects-preview";
-import BlogPreview from "@/components/home-page-components/blogs-preview/blogs-preview";
-// import Skills from "@/components/home-page-components/skills/skills";
-import Contact from "@/components/home-page-components/contact/contact";
+import Hero from "@/components/home/hero/hero";
+import About from "@/components/home/about/about";
+import ProjectsPreview from "@/components/home/projects-preview/projects-preview";
+import BlogPreview from "@/components/home/blogs-preview/blogs-preview";
+// import Skills from "@/components/home/skills/skills";
+import Contact from "@/components/home/contact/contact";
 
 export default function Home() {
   return (

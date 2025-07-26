@@ -1,6 +1,6 @@
 import { blogsData } from "@/data/blogs-data/blogs-data";
-import FeaturedBlogCard from "@/components/blogs-page-components/featured-blog-card";
-import CompactBlogCard from "@/components/blogs-page-components/compact-blog-card";
+import FeaturedBlogCard from "@/components/blogs/featured-blog-card/featured-blog-card";
+import CompactBlogCard from "@/components/blogs/compact-blog-card/compact-blog-card";
 
 export default function BlogsPage() {
   const [featuredPost, ...otherPosts] = blogsData;

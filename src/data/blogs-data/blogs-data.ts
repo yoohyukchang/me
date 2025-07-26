@@ -15,7 +15,36 @@ export const blogsData: BlogPost[] = [
     id: 1,
     title: "Summer Internship Reflections",
     excerpt: "Thoughts on my first week at Samsung and the exciting projects ahead.",
-    content: "Full blog content would go here...",
+    content: `
+      <p>Starting my summer internship at Samsung has been an incredible journey so far. Just one week in, and I'm already amazed by the scale of innovation happening here and the opportunities that lie ahead.</p>
+
+      <h2>First Impressions</h2>
+      <p>Walking into the Samsung campus for the first time was both exciting and intimidating. The sheer size of the operation and the cutting-edge technology everywhere you look really drives home that you're working for one of the world's leading tech companies.</p>
+      
+      <p>My team welcomed me with open arms, and I was immediately struck by how collaborative and supportive the environment is. Despite Samsung's massive scale, there's a real sense of community and shared purpose among the engineers and designers I've met.</p>
+
+      <h2>The Project</h2>
+      <p>I've been assigned to work on mobile development projects, specifically focusing on user interface improvements for Samsung's flagship devices. While I can't share too many specifics due to confidentiality, I can say that the work involves optimizing user experiences and implementing new features that millions of people will eventually use.</p>
+      
+      <p>What excites me most is how much responsibility I've been given from day one. This isn't just busy work or shadowing – I'm contributing to real products that will ship to consumers worldwide.</p>
+
+      <h2>Learning Curve</h2>
+      <p>The technical learning curve has been steep but manageable. Samsung's development practices are sophisticated, with robust testing frameworks, code review processes, and documentation standards that put my university projects to shame.</p>
+      
+      <p>I'm working with technologies I'd only read about before, and the mentorship from senior engineers has been invaluable. Every day brings new challenges that push me to grow as a developer.</p>
+
+      <h2>Team Dynamics</h2>
+      <p>One thing that surprised me was how international and diverse the team is. I'm working alongside engineers from Korea, India, the US, and several European countries. The different perspectives and approaches to problem-solving have already taught me so much about global software development.</p>
+      
+      <p>The work culture strikes a great balance between being fast-paced and results-oriented while still being respectful of work-life balance. Long hours when needed, but not as a default expectation.</p>
+
+      <h2>Looking Ahead</h2>
+      <p>I'm only one week in, but I'm already excited about what the rest of the summer holds. There are several major milestones coming up for our project, and I'll be playing a key role in delivering them.</p>
+      
+      <p>Beyond the technical work, I'm looking forward to the networking opportunities, learning about Samsung's business strategy, and hopefully contributing something meaningful that will impact millions of users.</p>
+      
+      <p>This internship is already shaping up to be a defining experience in my career journey, and I can't wait to share more insights as the summer progresses.</p>
+    `,
     date: "May 5, 2025",
     readTime: "4 min read",
     tags: ["Internship", "Samsung", "Career", "Tech"],

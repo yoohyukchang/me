@@ -1,0 +1,252 @@
+.blog-article {
+  min-height: 100vh;
+  background: white;
+}
+
+/* Hero Section */
+.blog-article-hero {
+  position: relative;
+  height: 60vh;
+  min-height: 400px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  margin-bottom: 48px;
+}
+
+.blog-article-cover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+}
+
+.blog-article-cover-image {
+  object-fit: cover;
+  object-position: center;
+}
+
+.blog-article-cover-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.2) 0%,
+    rgba(0, 0, 0, 0.4) 60%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+  z-index: 2;
+}
+
+.blog-article-hero-content {
+  position: relative;
+  z-index: 3;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+  color: white;
+}
+
+.blog-article-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+  opacity: 0.9;
+}
+
+.blog-article-date {
+  font-weight: 500;
+}
+
+.blog-article-separator {
+  opacity: 0.6;
+}
+
+.blog-article-read-time {
+  opacity: 0.8;
+}
+
+.blog-article-title {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0 0 24px 0;
+  letter-spacing: -0.025em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.blog-article-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.blog-article-tag {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Content Section */
+.blog-article-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.blog-article-prose {
+  line-height: 1.7;
+  color: #374151;
+}
+
+.blog-article-excerpt {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.blog-article-body {
+  font-size: 1.125rem;
+  line-height: 1.8;
+}
+
+.blog-article-body h2 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 48px 0 24px 0;
+  line-height: 1.3;
+}
+
+.blog-article-body h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 36px 0 18px 0;
+  line-height: 1.4;
+}
+
+.blog-article-body p {
+  margin-bottom: 24px;
+  color: #4b5563;
+}
+
+.blog-article-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Navigation */
+.blog-article-navigation {
+  max-width: 800px;
+  margin: 64px auto 0;
+  padding: 0 24px 48px;
+}
+
+.blog-article-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  padding: 12px 0;
+}
+
+.blog-article-back-link:hover {
+  color: #000000;
+  transform: translateX(-4px);
+}
+
+.blog-article-back-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+}
+
+.blog-article-back-link:hover .blog-article-back-icon {
+  transform: translateX(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .blog-article-hero {
+    height: 50vh;
+    min-height: 350px;
+  }
+  
+  .blog-article-hero-content {
+    padding: 0 20px 32px;
+  }
+  
+  .blog-article-title {
+    font-size: 2.25rem;
+  }
+  
+  .blog-article-content {
+    padding: 0 20px;
+  }
+  
+  .blog-article-excerpt {
+    font-size: 1.125rem;
+  }
+  
+  .blog-article-body {
+    font-size: 1rem;
+  }
+  
+  .blog-article-body h2 {
+    font-size: 1.5rem;
+    margin: 36px 0 18px 0;
+  }
+  
+  .blog-article-body h3 {
+    font-size: 1.25rem;
+    margin: 24px 0 12px 0;
+  }
+  
+  .blog-article-navigation {
+    padding: 0 20px 32px;
+    margin-top: 48px;
+  }
+}
+
+@media (max-width: 480px) {
+  .blog-article-hero {
+    height: 45vh;
+    min-height: 300px;
+  }
+  
+  .blog-article-title {
+    font-size: 1.875rem;
+  }
+  
+  .blog-article-meta {
+    font-size: 0.8125rem;
+  }
+  
+  .blog-article-tags {
+    gap: 8px;
+  }
+  
+  .blog-article-tag {
+    padding: 6px 12px;
+    font-size: 0.8125rem;
+  }
+}
