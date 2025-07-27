@@ -13,39 +13,31 @@ export const projectsData: Project[] = [
     title: "CodaHx, Inc.",
     description: "AI-driven analysis to help you navigate each stage of maternity care billing, from pregnancy through delivery and beyond.",
     image: "/projects/codahx/codahx-thumbnail.png",
-    tags: ["Next.js", "Tailwind CSS", "Stripe"],
+    tags: ["Next.js", "RAG", "AWS"],
     link: "https://www.codahx.com"
   },
   {
     id: "prostate-segmentation",
-    title: "Prostate Segmentation",
-    description: "A dashboard application for monitoring real-time data with customizable widgets.",
-    image: "/projects/prostate-segmentation/prostate-segmentation-thumbnail.png",
-    tags: ["React", "D3.js", "Firebase"],
-    link: "https://drive.google.com/file/d/1WuoOK2rMWTmDD39PTFoEAoEXBx2hYG0a/edit"
+    title: "Prostate & Cancer Lesion Segmentation using Transformer-U-Net",
+    description: "Transformer-U-Net deep learning model for detecting and segmenting prostate and cancer lesions in MRI scans to support faster, more precise treatment planning.",
+    image: "/projects/ml-prostate-segmentation/ml-prostate-segmentation-thumbnail.png",
+    tags: ["PyTorch", "Transformer", "U-Net", "Medical Imaging"],
+    link: "https://drive.google.com/file/d/1WuoOK2rMWTmDD39PTFoEAoEXBx2hYG0a"
   },
   {
-    id: "ecommerce-platform",
-    title: "E-commerce Platform",
-    description: "A full-stack e-commerce solution with inventory management, payment processing, and real-time analytics.",
-    image: "/projects/ecommerce/ecommerce-thumbnail.png",
-    tags: ["Node.js", "PostgreSQL", "Redis"],
-    link: "#"
+    id: "ray-tracing-opengl-cg",
+    title: "Ray Tracing and OpenGL Renderer",
+    description: "Built a custom ray tracer from scratch supporting reflection, refraction, shadows, shading, and texture mapping. Extended the same scene functionality using OpenGL for real-time rendering with interactive camera controls.",
+    image: "/projects/ray-tracing-opengl-cg/ray-tracing-opengl-cg-thumbnail.gif",
+    tags: ["C++", "Ray Tracing", "OpenGL", "Computer Graphics"],
+    link: "https://www.cs.jhu.edu/~misha/Spring25/Assignments/Assignment2/"
   },
   {
-    id: "ml-pipeline",
-    title: "ML Data Pipeline",
-    description: "Automated machine learning pipeline for processing large datasets and generating predictive models.",
-    image: "/projects/ml-pipeline/ml-pipeline-thumbnail.png",
-    tags: ["Python", "TensorFlow", "Docker"],
-    link: "#"
-  },
-  {
-    id: "mobile-app",
-    title: "Health Tracking App",
-    description: "Cross-platform mobile application for tracking health metrics with social features and gamification.",
-    image: "/projects/health-app/health-app-thumbnail.png",
-    tags: ["React Native", "GraphQL", "MongoDB"],
-    link: "#"
+    id: "pose-estimation-cv",
+    title: "Pose Estimation Model Comparison",
+    description: "Developed and benchmarked four human pose estimation models—AlphaPose, OpenPose, PoseNet, and HRNet—on the COCO 2017 dataset. Evaluated performance under occlusion and clean conditions using metrics like mAP, AP, AR, and AUC to assess keypoint detection precision and recall.",
+    image: "/projects/cv-pose-estimation/cv-pose-estimation-thumbnail.png",
+    tags: ["PyTorch", "CNN", "Heatmap Regression", "Human Keypoint Detection", "mAP", "AlphaPose", "HRNet", "OpenPose", "PoseNet"],
+    link: "https://drive.google.com/file/d/1vpm_-lATFZFHp_J4ObsXTZz2KoxwSapt"
   }
 ];

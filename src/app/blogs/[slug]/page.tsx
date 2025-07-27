@@ -3,13 +3,14 @@ import { notFound } from "next/navigation";
 import BlogArticle from "@/components/blogs/blog-article/blog-article";
 
 interface BlogPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
-export default function BlogPage({ params }: BlogPageProps) {
-  const blog = blogsData.find((blog) => blog.slug === params.slug);
+export default async function BlogPage({ params }: BlogPageProps) {
+  const { slug } = await params;
+  const blog = blogsData.find((blog) => blog.slug === slug);
 
   if (!blog) {
     notFound();
