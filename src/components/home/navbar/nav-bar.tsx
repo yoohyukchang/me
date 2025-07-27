@@ -12,7 +12,7 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm border-b border-[#e5e7eb]">
       <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-        <h2 className="text-xl font-bold tracking-tighter">Yoohyuk Chang</h2>
+        <Link href="/" className="text-xl font-bold tracking-tighter hover:text-[#6b7280] transition-colors">Yoohyuk Chang</Link>
         <ul className="hidden md:flex space-x-8">
           <li><Link href="/#about" className="text-[#6b7280] hover:text-black transition-colors">About</Link></li>
           <li><Link href="/#projects" className="text-[#6b7280] hover:text-black transition-colors">Projects</Link></li>

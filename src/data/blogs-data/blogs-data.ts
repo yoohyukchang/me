@@ -38,7 +38,7 @@ export const blogsData: BlogPost[] = [
     <h2>Beyond the Code</h2>
     <p>The technical work was challenging, but what struck me most were the people I worked with. The leadership I encountered had this ability to see the bigger picture that I found inspiring. I remember being in a design review meeting where a senior engineer quietly listened to presentations, then pointed out edge cases and potential issues that none of us had considered. It made me realize that becoming a good engineer isn't just about coding skills—it's about developing the vision to see the forest, not just the trees.</p>
 
-    <p>Also, can we talk about the food? I'm not exaggerating when I say the cafeteria might have been my favorite part of the internship. Our building didn't have its own food court, so we'd walk to the neighboring building, but their cafeteria was incredible. Korean dishes, American options, vegetarian choices—it was like having a food festival every day. I may have stayed longer at lunch than I should have on multiple occasions.</p>
+    <p>Also, let's talk about food. I'm not exaggerating when I say the cafeteria might have been my favorite part of the internship. Our building didn't have its own food court, so we'd walk to the neighboring building, but their cafeteria was incredible. Korean dishes, American options, vegetarian choices—it was like having a food festival every day. I may have stayed longer at lunch than I should have on multiple occasions.</p>
 
     <h2>Testing My Limits</h2>
     <p>Samsung gave us three chances to take their coding assessment throughout the internship. I failed the first one. The problems weren't typical LeetCode-style questions but rather simulation-based challenges that required building multiple interconnected functions to solve complex scenarios. Initially, I found this format intimidating, but I actually came to appreciate it. These problems felt more like real engineering challenges rather than memorized algorithmic puzzles.</p>
@@ -53,20 +53,43 @@ export const blogsData: BlogPost[] = [
     <p>Now I'm more curious about the semiconductor industry now (maybe I'll find my way to the DS division someday), more confident in my problem-solving abilities, and definitely more appreciative of good cafeteria food. But mostly, I'm excited about the kind of engineer I'm becoming and the problems I'll get to solve in the future.</p>
     `,
     date: "May 5, 2025",
-    readTime: "4 min read",
+    readTime: "5 min read",
     tags: ["Internship", "Samsung", "Career", "Tech"],
     slug: "summer-internship-reflections",
     image: "/blogs/samsung-internship/samsung-internship.jpg"
   },
   {
     id: 2,
-    title: "Baltimore's Hidden Gems",
-    excerpt: "Exploring my favorite local spots in the city during spring break.",
-    content: "Full blog content would go here...",
-    date: "April 12, 2025",
+    title: "My Amazon Summer Experience",
+    excerpt: "From AWS services to leadership principles—how three months at Amazon changed my perspective on building at scale.",
+    content: `
+      <p>Three months at Amazon felt like drinking from a fire hose—in the best possible way. Coming from my previous Samsung internship, I thought I understood what working at a tech giant meant, but Amazon's scale and pace were something entirely different.</p>
+      
+      <h2>Day One Mentality</h2>
+      <p>Amazon's famous "Day 1" philosophy isn't just corporate speak—it's genuinely embedded in how people think and work here. From my first week, I was struck by how every decision, no matter how small, was approached with the urgency and curiosity of a startup, despite being one of the world's largest companies.</p>
+      
+      <p>My team welcomed me with a project that would directly impact millions of customers, which was both thrilling and terrifying. The ownership culture here means that as an intern, your work isn't just busy work—it's real, impactful, and held to the same standards as any full-time engineer's contributions.</p>
+      
+      <h2>Building at Amazon Scale</h2>
+      <p>Working in Amazon's PXT (People eXperience and Technology) organization gave me a unique perspective on how Amazon approaches internal tooling and employee experiences. The technical challenges were unlike anything I'd encountered before—building systems that serve Amazon's massive workforce requires the same level of scale and reliability as customer-facing products.</p>
+      
+      <p>Even though I wasn't directly on the AWS team, I found myself using AWS services extensively. From Lambda functions to DynamoDB, S3 to CloudWatch, I got hands-on experience with the very infrastructure that powers much of the modern web. It was fascinating to be a customer of AWS while working at Amazon, seeing both sides of the ecosystem.</p>
+      
+      <h2>The Leadership Principles in Action</h2>
+      <p>Amazon's 16 Leadership Principles aren't just wall decorations—they're actively used in decision-making, code reviews, and daily interactions. "Customer Obsession" and "Ownership" became more than buzzwords as I watched how every feature decision was traced back to customer impact.</p>
+      
+      <p>What surprised me most was how "Disagree and Commit" played out in practice. I witnessed healthy debates where junior engineers challenged senior architects, and once a decision was made, everyone aligned fully behind it, regardless of their initial position.</p>
+      
+      <h2>Growth Through Challenge</h2>
+      <p>This internship pushed me far outside my comfort zone, and I'm grateful for every challenging moment. Whether it was presenting to senior leadership, debugging production issues, or designing systems for fault tolerance, each experience built confidence I didn't know I needed.</p>
+      
+      <p>Looking back, Amazon didn't just teach me about technology—it taught me about thinking big, moving fast, and building with the customer in mind. These lessons will shape how I approach problems for the rest of my career.</p>
+    `,
+    date: "July 27, 2025",
     readTime: "6 min read",
-    tags: ["Travel", "Baltimore", "Local", "Photography"],
-    slug: "baltimore-hidden-gems"
+    tags: ["Internship", "Amazon", "AWS", "Software Engineering", "Career Growth"],
+    slug: "amazon-internship-experience",
+    image: "/blogs/amazon-internship/amazon-internship.jpg"
   },
   {
     id: 3,
