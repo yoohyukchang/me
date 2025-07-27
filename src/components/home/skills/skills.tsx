@@ -1,4 +1,4 @@
-import { SkillBadge } from "@/components/home-page-components/skills/skill-badge";
+import { SkillBadge } from "@/components/home/skills/skill-badge";
 
 /**
  * 

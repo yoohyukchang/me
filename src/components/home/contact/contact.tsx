@@ -3,12 +3,12 @@ import { ContactForm } from "@/components/home/contact/contact-form";
 export default function Contact() {
   return (
     <section id="contact" className="py-20">
-      <h2 className="text-3xl font-bold tracking-tight mb-8">Let's Connect</h2>
+      <h2 className="text-3xl font-bold tracking-tight mb-8">Let&apos;s Connect</h2>
       <div className="flex flex-col md:flex-row gap-16">
         <div className="flex-1 space-y-6">
           <p className="text-gray-600">
             Whether you want to discuss a project, share thoughts about a blog entry, 
-            or just say hello, I'd love to hear from you!
+            or just say hello, I&apos;d love to hear from you!
           </p>
           <div className="space-y-4">
             <div className="flex items-center gap-3">

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { projectsData } from "@/data/projects-data/projects-data";
 import ProjectCard from "@/components/projects/project-card/project-card";
 
@@ -29,14 +30,14 @@ export default function ProjectsPage() {
             Interested in working together?
           </h2>
           <p className="text-gray-600 mb-8 max-w-lg mx-auto">
-            I'm always open to discussing new opportunities and interesting projects.
+            I&apos;m always open to discussing new opportunities and interesting projects.
           </p>
-          <a 
+          <Link 
             href="/#contact" 
             className="inline-block border border-black px-8 py-3 rounded-lg font-medium hover:bg-black hover:text-white transition-colors"
           >
             Get in touch
-          </a>
+          </Link>
         </div>
       </div>
     </main>

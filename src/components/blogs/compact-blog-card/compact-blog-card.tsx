@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BlogPost } from "@/data/blogs-data/blogs-data";
 import "./compact-blog-card.css";
 
@@ -16,9 +17,9 @@ export default function CompactBlogCard({ blog }: CompactBlogCardProps) {
         </div>
         
         <h3 className="compact-blog-card-title">
-          <a href={`/blogs/${blog.slug}`} className="compact-blog-card-title-link">
+          <Link href={`/blogs/${blog.slug}`} className="compact-blog-card-title-link">
             {blog.title}
-          </a>
+          </Link>
         </h3>
         
         <p className="compact-blog-card-excerpt">{blog.excerpt}</p>
@@ -32,7 +33,7 @@ export default function CompactBlogCard({ blog }: CompactBlogCardProps) {
         </div>
         
         <div className="compact-blog-card-actions">
-          <a 
+          <Link 
             href={`/blogs/${blog.slug}`}
             className="compact-blog-card-link"
           >
@@ -50,7 +51,7 @@ export default function CompactBlogCard({ blog }: CompactBlogCardProps) {
                 d="M17 8l4 4m0 0l-4 4m4-4H3" 
               />
             </svg>
-          </a>
+          </Link>
         </div>
       </div>
     </article>

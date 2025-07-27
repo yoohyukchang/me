@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { blogsData } from "@/data/blogs-data/blogs-data";
 import FeaturedBlogCard from "@/components/blogs/featured-blog-card/featured-blog-card";
 import CompactBlogCard from "@/components/blogs/compact-blog-card/compact-blog-card";
@@ -47,12 +48,12 @@ export default function BlogsPage() {
             <p className="text-gray-600 mb-8">
               Get notified when I publish new posts about technology, career insights, and life experiences.
             </p>
-            <a 
+            <Link 
               href="/#contact" 
               className="inline-block border border-black px-8 py-3 rounded-lg font-medium hover:bg-black hover:text-white transition-colors"
             >
               Get in touch
-            </a>
+            </Link>
           </div>
         </div>
       </div>

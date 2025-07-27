@@ -39,7 +39,7 @@ export function ContactForm() {
     <form onSubmit={handleSubmit} className="space-y-6">
       {submitted ? (
         <div className="bg-green-50 text-green-700 p-4 rounded-lg">
-          Thank you for your message! I'll get back to you soon.
+          Thank you for your message! I&apos;ll get back to you soon.
         </div>
       ) : (
         <>

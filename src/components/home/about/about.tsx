@@ -7,11 +7,11 @@ export default function About() {
         <h2 className="text-3xl font-bold tracking-tight mb-8">About Me</h2>
         <div className="space-y-4 text-gray-600">
           <p>
-            Hi there! I'm Yoohyuk, a Computer Science student at Johns Hopkins University with a passion for 
+            Hi there! I&apos;m Yoohyuk, a Computer Science student at Johns Hopkins University with a passion for 
             technology, learning, and exploring new experiences.
           </p>
           <p>
-            When I'm not coding or studying, you might find me exploring Baltimore's food scene, 
+            When I&apos;m not coding or studying, you might find me exploring Baltimore&apos;s food scene, 
             reading science fiction, or attempting to perfect my latte art. I believe in balancing 
             technical pursuits with creative outlets and personal growth.
           </p>

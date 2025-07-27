@@ -7,7 +7,7 @@ export default function Hero() {
         <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter leading-tight">
           Hello!
           <br />
-          I'm Yoohyuk
+          I&apos;m Yoohyuk
         </h1>
         <p className="text-lg text-gray-600 max-w-md">
           CS student at Johns Hopkins, tech enthusiast, and occasional adventurer. 
@@ -18,7 +18,7 @@ export default function Hero() {
             href="#contact" 
             className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium text-sm hover:bg-gray-800 transition-colors"
           >
-            Let's connect
+            Let&apos;s connect
           </a>
         </div>
       </div>
