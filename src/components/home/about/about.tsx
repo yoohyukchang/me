@@ -26,19 +26,19 @@ export default function About() {
           <h3 className="text-xl font-bold">Education</h3>
           
           {/* University */}
-          <div className="flex items-center gap-4 p-2">
-            <div className="w-16 h-16 flex items-center justify-center flex-shrink-0">
+          <div className="flex items-center gap-5 group cursor-pointer">
+            <div className="w-14 h-14 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-sm transition-all duration-200 group-hover:shadow-lg group-hover:border-gray-400 group-hover:scale-105 overflow-hidden">
               <Image 
                 src="/logos/johns_hopkins.png" 
                 alt="Johns Hopkins University logo" 
-                width={64}
-                height={64}
-                className="object-contain"
+                width={80}
+                height={80}
+                className="object-cover rounded-xl scale-125"
               />
             </div>
-            <div>
-              <p className="font-medium text-black">B.S. Computer Science</p>
-              <p className="text-gray-600">Johns Hopkins University</p>
+            <div className="transition-all duration-200 group-hover:translate-x-1">
+              <p className="font-medium text-black group-hover:text-gray-900">B.S. Computer Science</p>
+              <p className="text-gray-600 group-hover:text-gray-700">Johns Hopkins University</p>
               <p className="text-gray-500 text-sm mt-1">2022 - 2026</p>
             </div>
           </div>
@@ -47,41 +47,52 @@ export default function About() {
         <div className="space-y-4">
           <h3 className="text-xl font-bold">Experience</h3>
           
-          {/* Experience Cards */}
-          <div className="space-y-5">
-            {/* Amazon Experience */}
-            <div className="flex items-center gap-4 p-2 group">
-              <div className="w-14 h-14 flex items-center justify-center flex-shrink-0">
-                <Image 
-                  src="/logos/amazon.png" 
-                  alt="Amazon logo" 
-                  width={56}
-                  height={56}
-                  className="object-contain"
-                />
-              </div>
-              <div>
-                <p className="font-medium text-black">Software Development Engineer Intern</p>
-                <p className="text-gray-600">Amazon</p>
-                <p className="text-gray-500 text-sm mt-1">June 2025 - August 2025</p>
-              </div>
-            </div>
+          {/* Timeline Container */}
+          <div className="relative">
+            {/* Main Timeline Line */}
+            <div className="absolute left-7 top-4 bottom-4 w-0.5 bg-gray-300"></div>
             
-            {/* Samsung Experience */}
-            <div className="flex items-center gap-4 p-2 group">
-              <div className="w-14 h-14 flex items-center justify-center flex-shrink-0">
-                <Image 
-                  src="/logos/samsung.png" 
-                  alt="Samsung logo" 
-                  width={56}
-                  height={56}
-                  className="object-contain"
-                />
+            <div className="space-y-8">
+              {/* Amazon Experience */}
+              <div className="relative flex items-center gap-5 group cursor-pointer">
+                {/* Logo */}
+                <div className="w-14 h-14 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-sm transition-all duration-200 group-hover:shadow-lg group-hover:border-gray-400 group-hover:scale-105 overflow-hidden">
+                  <Image 
+                    src="/logos/amazon.png" 
+                    alt="Amazon logo" 
+                    width={60}
+                    height={60}
+                    className="object-cover rounded-xl"
+                  />
+                </div>
+                
+                {/* Content */}
+                <div className="flex-1 transition-all duration-200 group-hover:translate-x-1">
+                  <p className="font-medium text-black group-hover:text-gray-900">Software Development Engineer Intern</p>
+                  <p className="text-gray-600 group-hover:text-gray-700">Amazon</p>
+                  <p className="text-gray-500 text-sm mt-1">June 2025 - August 2025</p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-black">Machine Learning Engineer Intern</p>
-                <p className="text-gray-600">Samsung Electronics</p>
-                <p className="text-gray-500 text-sm mt-1">June 2024 - August 2024</p>
+              
+              {/* Samsung Experience */}
+              <div className="relative flex items-center gap-5 group cursor-pointer">
+                {/* Logo */}
+                <div className="w-14 h-14 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-sm transition-all duration-200 group-hover:shadow-lg group-hover:border-gray-400 group-hover:scale-105">
+                  <Image 
+                    src="/logos/samsung.png" 
+                    alt="Samsung logo" 
+                    width={50}
+                    height={50}
+                    className="object-contain"
+                  />
+                </div>
+                
+                {/* Content */}
+                <div className="flex-1 transition-all duration-200 group-hover:translate-x-1">
+                  <p className="font-medium text-black group-hover:text-gray-900">Machine Learning Engineer Intern</p>
+                  <p className="text-gray-600 group-hover:text-gray-700">Samsung Electronics</p>
+                  <p className="text-gray-500 text-sm mt-1">June 2024 - August 2024</p>
+                </div>
               </div>
             </div>
           </div>
