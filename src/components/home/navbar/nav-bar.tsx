@@ -34,14 +34,10 @@ export default function Navbar() {
       </div>
       
       {/* Mobile Menu */}
-      <div className={`md:hidden transition-all duration-300 ease-in-out ${
-        isMenuOpen 
-          ? 'max-h-64 opacity-100 border-b border-[#e5e7eb]' 
-          : 'max-h-0 opacity-0 overflow-hidden'
-      } bg-white/95 backdrop-blur-sm`}>
-        <div className="container mx-auto px-6 py-4">
-          <ul className="space-y-4">
-            <li>
+      {isMenuOpen && (
+        <div className="container mx-auto px-6 py-4 md:hidden">
+          <div className="space-y-4">
+            <div>
               <Link 
                 href="/#about" 
                 className="block text-[#6b7280] hover:text-black transition-colors py-2"
@@ -49,8 +45,8 @@ export default function Navbar() {
               >
                 About
               </Link>
-            </li>
-            <li>
+            </div>
+            <div>
               <Link 
                 href="/#projects" 
                 className="block text-[#6b7280] hover:text-black transition-colors py-2"
@@ -58,8 +54,8 @@ export default function Navbar() {
               >
                 Projects
               </Link>
-            </li>
-            <li>
+            </div>
+            <div>
               <Link 
                 href="/#blog" 
                 className="block text-[#6b7280] hover:text-black transition-colors py-2"
@@ -67,8 +63,8 @@ export default function Navbar() {
               >
                 Blog
               </Link>
-            </li>
-            <li>
+            </div>
+            <div>
               <Link 
                 href="/#contact" 
                 className="block text-[#6b7280] hover:text-black transition-colors py-2"
@@ -76,10 +72,10 @@ export default function Navbar() {
               >
                 Contact
               </Link>
-            </li>
-          </ul>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </nav>
   );
 }
