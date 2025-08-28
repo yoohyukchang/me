@@ -11,8 +11,9 @@ export default function About() {
             technology, learning, and exploring new experiences.
           </p>
           <p>
-            When I&apos;m not coding or studying, you might find me exploring Baltimore&apos;s food scene, 
-            reading science fiction, or attempting to perfect my latte art. I believe in balancing 
+            When I&apos;m not coding or studying, you might find me traveling to different countries, 
+            capturing street photography with my Fujifilm X-T50, watching penguin documentaries, or 
+            playing chess (although I&apos;m not very good at it yet). I believe in balancing 
             technical pursuits with creative outlets and personal growth.
           </p>
           <p>
