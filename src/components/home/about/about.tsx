@@ -7,18 +7,17 @@ export default function About() {
         <h2 className="text-3xl font-bold tracking-tight mb-8">About Me</h2>
         <div className="space-y-4 text-gray-600">
           <p>
-            Hi there! I&apos;m Yoohyuk, a Computer Science student at Johns Hopkins University with a passion for 
-            technology, learning, and exploring new experiences.
+            Hi! 
+            <br/>
+            I&apos;m Yoohyuk (Paul), an undergraduate student at Johns Hopkins University (Baltimore, MD, USA) studying computer science.
           </p>
           <p>
-            When I&apos;m not coding or studying, you might find me traveling to different countries, 
-            capturing street photography with my Fujifilm X-T50, watching penguin documentaries, or 
-            playing chess (although I&apos;m not very good at it yet). I believe in balancing 
-            technical pursuits with creative outlets and personal growth.
+            I love traveling to different countries, 
+            shooting photography with my Fujifilm X-T50 digital camera, watching wildlife documentaries, and
+            playing chess (although I&apos;m not very good at it yet).
           </p>
           <p>
-            This website serves as both my professional portfolio and a personal space to document my 
-            journey through college, career milestones, and life adventures.
+            I imagine this website to be my lasting digital space where I share my projects, experiences, and the journey of my life.
           </p>
         </div>
       </div>

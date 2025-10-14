@@ -26,8 +26,7 @@ export default function Hero() {
           I&apos;m Yoohyuk
         </h1>
         <p className="text-lg text-gray-600 max-w-md">
-          CS student at Johns Hopkins, tech enthusiast, and occasional adventurer. 
-          This is my digital space where I share my journey, projects, and thoughts.
+          I&apos;m a Senior at Johns Hopkins University, and this is my personal digital space where I share my projects, experiences, and the journey of my life.
         </p>
         <div className="pt-4">
           <a 
