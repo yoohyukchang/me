@@ -34,9 +34,6 @@ export default function Hero() {
           shooting photography with my Fujifilm X-T50 digital camera, watching wildlife documentaries, and
           playing chess (although I&apos;m not very good at it yet).
         </p>
-        <p className="text-gray-600">
-          I imagine this website to be my digital space where I share my projects, experiences, and the journey of my life.
-        </p>
 
         {/* Contact Section */}
         <div className="pt-8 mt-8 border-t border-gray-200">
