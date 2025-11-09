@@ -39,23 +39,6 @@ export default function BlogsPage() {
           </div>
         </div>
 
-        {/* Newsletter/Contact Section */}
-        <div className="text-center mt-20 pt-16 border-t border-gray-200">
-          <div className="max-w-lg mx-auto">
-            <h3 className="text-2xl font-bold mb-4">
-              Stay Updated
-            </h3>
-            <p className="text-gray-600 mb-8">
-              Get notified when I publish new posts about technology, career insights, and life experiences.
-            </p>
-            <Link 
-              href="/#contact" 
-              className="inline-block border border-black px-8 py-3 rounded-lg font-medium hover:bg-black hover:text-white transition-colors"
-            >
-              Get in touch
-            </Link>
-          </div>
-        </div>
       </div>
     </main>
   );

@@ -24,21 +24,6 @@ export default function ProjectsPage() {
           ))}
         </div>
 
-        {/* Contact Section */}
-        <div className="text-center mt-20 pt-16 border-t border-gray-200">
-          <h2 className="text-2xl font-bold mb-4">
-            Interested in working together?
-          </h2>
-          <p className="text-gray-600 mb-8 max-w-lg mx-auto">
-            I&apos;m always open to discussing new opportunities and interesting projects.
-          </p>
-          <Link 
-            href="/#contact" 
-            className="inline-block border border-black px-8 py-3 rounded-lg font-medium hover:bg-black hover:text-white transition-colors"
-          >
-            Get in touch
-          </Link>
-        </div>
       </div>
     </main>
   );
