@@ -68,7 +68,7 @@ export default function Hero() {
           {/* Social Media Icons */}
           <div className="flex gap-3">
             <a
-              href="https://www.instagram.com/yoohyuk_chang/"
+              href="https://www.instagram.com/pauliemolie/"
               target="_blank"
               rel="noopener noreferrer"
               className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-black transition-colors group"
@@ -93,7 +93,7 @@ export default function Hero() {
               </svg>
             </a>
             <a
-              href="https://www.linkedin.com/in/yoohyuk-chang/"
+              href="https://www.linkedin.com/in/yoohyukchang/"
               target="_blank"
               rel="noopener noreferrer"
               className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-black transition-colors group"
