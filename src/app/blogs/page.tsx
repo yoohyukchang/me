@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { blogsData } from "@/data/blogs-data/blogs-data";
 import FeaturedBlogCard from "@/components/blogs/featured-blog-card/featured-blog-card";
 import CompactBlogCard from "@/components/blogs/compact-blog-card/compact-blog-card";

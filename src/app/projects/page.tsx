@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { projectsData } from "@/data/projects-data/projects-data";
 import ProjectCard from "@/components/projects/project-card/project-card";
 
