@@ -18,7 +18,6 @@ export default function Navbar() {
           <li><Link href="/#projects" className="text-[#6b7280] hover:text-black transition-colors">Projects</Link></li>
           <li><Link href="/#blog" className="text-[#6b7280] hover:text-black transition-colors">Blog</Link></li>
           {/* <li><Link href="/#skills" className="text-[#6b7280] hover:text-black transition-colors">Skills</Link></li> */}
-          <li><Link href="/#contact" className="text-[#6b7280] hover:text-black transition-colors">Contact</Link></li>
         </ul>
         <button 
           className="md:hidden p-2 text-[#6b7280] hover:text-black transition-colors"
@@ -56,21 +55,12 @@ export default function Navbar() {
               </Link>
             </div>
             <div>
-              <Link 
-                href="/#blog" 
+              <Link
+                href="/#blog"
                 className="block text-[#6b7280] hover:text-black transition-colors py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Blog
-              </Link>
-            </div>
-            <div>
-              <Link 
-                href="/#contact" 
-                className="block text-[#6b7280] hover:text-black transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Contact
               </Link>
             </div>
           </div>

@@ -17,7 +17,7 @@ export default function About() {
             playing chess (although I&apos;m not very good at it yet).
           </p>
           <p>
-            I imagine this website to be my lasting digital space where I share my projects, experiences, and the journey of my life.
+            I imagine this website to be my digital space where I share my projects, experiences, and the journey of my life.
           </p>
         </div>
       </div>
