@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 const upcomingPosts = [
   {
     id: 1,
-    title: "Blog Post 1",
-    description: "Coming soon — stay tuned for my first reflection.",
+    title: "First Impressions & Integration",
+    description: "What surprised me, what excites me, and two improv rules I want to carry into everyday life.",
     href: "/improv/blog1",
   },
   {
