@@ -208,6 +208,18 @@ export default function Blog1() {
               with genuine honesty. I believe that, at its core, all good
               communication comes from being truthful.
             </p>
+            <div className="my-8 rounded-xl overflow-hidden">
+              <video
+                className="w-full"
+                autoPlay
+                loop
+                muted
+                playsInline
+              >
+                <source src="/improv/making-eye-contact.webm" type="video/webm" />
+              </video>
+            </div>
+
             <p>
               Recently, I noticed that I do not make much eye contact when
               speaking one-on-one with someone. When someone else did the same to
