@@ -17,8 +17,8 @@ const upcomingPosts = [
   },
   {
     id: 2,
-    title: "Blog Post 2",
-    description: "Coming soon — more improv stories on the way.",
+    title: "Risk and Flexibility",
+    description: "On adapting mid-scene, saying yes to the unexpected, and what an Amazon internship taught me about bold choices.",
     href: "/improv/blog2",
   },
 ];
