@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { fetchFinnhubQuote } from "./providers/finnhub";
+import { fetchNaverPrice } from "./providers/korea/naver";
+import { convertToUsd } from "./providers/fx";
 
 export async function GET(request: NextRequest) {
   const symbol = request.nextUrl.searchParams.get("symbol")?.trim().toUpperCase();
@@ -14,34 +17,29 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const url = new URL("https://finnhub.io/api/v1/quote");
-  url.searchParams.set("symbol", symbol);
-  url.searchParams.set("token", apiKey);
-
-  let data: { c?: number; pc?: number };
-  try {
-    const res = await fetch(url, { cache: "no-store" });
-    if (res.status === 403) {
-      return NextResponse.json(
-        {
-          error: `Live prices for ${symbol} aren't available on the free Finnhub plan (non-U.S. listings need a paid plan) — enter the price manually.`,
-        },
-        { status: 502 }
-      );
-    }
-    if (!res.ok) {
-      return NextResponse.json({ error: `Price lookup failed for ${symbol}` }, { status: 502 });
-    }
-    data = await res.json();
-  } catch {
+  const finnhub = await fetchFinnhubQuote(symbol, apiKey);
+  if (finnhub.status === "ok") {
+    return NextResponse.json({ symbol, price: finnhub.price });
+  }
+  if (finnhub.status === "error") {
     return NextResponse.json({ error: `Price lookup failed for ${symbol}` }, { status: 502 });
   }
 
-  // Finnhub returns all-zero fields (rather than an HTTP error) for
-  // symbols it has no data for.
-  if (typeof data.c !== "number" || (data.c === 0 && data.pc === 0)) {
-    return NextResponse.json({ error: `No price data found for ${symbol}` }, { status: 404 });
+  // finnhub.status is "unsupported" or "no-data" — try the Korea fallback.
+  const native = await fetchNaverPrice(symbol);
+  const price = native ? await convertToUsd(native) : null;
+  if (price !== null) {
+    return NextResponse.json({ symbol, price, source: "naver" });
   }
 
-  return NextResponse.json({ symbol, price: data.c });
+  if (finnhub.status === "unsupported") {
+    return NextResponse.json(
+      {
+        error: `Live prices for ${symbol} aren't available on the free Finnhub plan, and the backup price source didn't return a price either — enter the price manually.`,
+      },
+      { status: 502 }
+    );
+  }
+
+  return NextResponse.json({ error: `No price data found for ${symbol}` }, { status: 404 });
 }
