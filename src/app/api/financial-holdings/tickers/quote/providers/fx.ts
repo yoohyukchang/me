@@ -1,30 +1,20 @@
 import type { NativePrice } from "./types";
 
-const CACHE_TTL_MS = 60 * 60 * 1000;
-const rateCache = new Map<string, { rate: number; fetchedAt: number }>();
-
-// Cached so bulk "refresh all" runs don't hit the FX API once per stock.
 async function getUsdRate(currency: string): Promise<number | null> {
   if (currency === "USD") return 1;
-
-  const cached = rateCache.get(currency);
-  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) return cached.rate;
 
   try {
     const res = await fetch(
       `https://api.frankfurter.dev/v1/latest?base=${encodeURIComponent(currency)}&symbols=USD`,
       { cache: "no-store" }
     );
-    if (!res.ok) return cached?.rate ?? null;
+    if (!res.ok) return null;
 
     const data = await res.json();
     const rate = data?.rates?.USD;
-    if (typeof rate !== "number") return cached?.rate ?? null;
-
-    rateCache.set(currency, { rate, fetchedAt: Date.now() });
-    return rate;
+    return typeof rate === "number" ? rate : null;
   } catch {
-    return cached?.rate ?? null;
+    return null;
   }
 }
 
