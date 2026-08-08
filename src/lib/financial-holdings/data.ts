@@ -6,8 +6,8 @@ import {
   ScanCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { CATEGORIES_TABLE, docClient, STOCKS_TABLE } from "./dynamodb-client";
-import type { Category, Stock } from "./types";
+import { CATEGORIES_TABLE, docClient, HISTORY_TABLE, STOCKS_TABLE } from "./dynamodb-client";
+import type { Category, HistoryEntry, Stock } from "./types";
 
 export async function listCategories(): Promise<Category[]> {
   const result = await docClient.send(
@@ -182,4 +182,63 @@ export async function updateStock(
 
 export async function deleteStock(id: string): Promise<void> {
   await docClient.send(new DeleteCommand({ TableName: STOCKS_TABLE, Key: { id } }));
+}
+
+export async function listHistoryEntries(): Promise<HistoryEntry[]> {
+  const result = await docClient.send(
+    new ScanCommand({ TableName: HISTORY_TABLE })
+  );
+  return (result.Items ?? []) as HistoryEntry[];
+}
+
+export async function createHistoryEntry(input: {
+  date: string;
+  netContribution: number;
+  portfolioValue: number;
+}): Promise<HistoryEntry> {
+  const entry: HistoryEntry = {
+    id: randomUUID(),
+    date: input.date,
+    netContribution: input.netContribution,
+    portfolioValue: input.portfolioValue,
+  };
+  await docClient.send(new PutCommand({ TableName: HISTORY_TABLE, Item: entry }));
+  return entry;
+}
+
+export async function updateHistoryEntry(
+  id: string,
+  input: {
+    date?: string;
+    netContribution?: number;
+    portfolioValue?: number;
+  }
+): Promise<void> {
+  const updates: string[] = [];
+  const values: Record<string, unknown> = {};
+  const names: Record<string, string> = {};
+
+  const fields: Array<keyof typeof input> = ["date", "netContribution", "portfolioValue"];
+  for (const field of fields) {
+    if (input[field] !== undefined) {
+      updates.push(`#${field} = :${field}`);
+      names[`#${field}`] = field;
+      values[`:${field}`] = input[field];
+    }
+  }
+  if (updates.length === 0) return;
+
+  await docClient.send(
+    new UpdateCommand({
+      TableName: HISTORY_TABLE,
+      Key: { id },
+      UpdateExpression: `SET ${updates.join(", ")}`,
+      ExpressionAttributeNames: names,
+      ExpressionAttributeValues: values,
+    })
+  );
+}
+
+export async function deleteHistoryEntry(id: string): Promise<void> {
+  await docClient.send(new DeleteCommand({ TableName: HISTORY_TABLE, Key: { id } }));
 }

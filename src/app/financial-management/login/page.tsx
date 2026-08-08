@@ -28,7 +28,7 @@ function LoginForm() {
       return;
     }
 
-    const next = searchParams.get("next") || "/financial-holdings";
+    const next = searchParams.get("next") || "/financial-management";
     router.push(next);
     router.refresh();
   }
@@ -37,7 +37,7 @@ function LoginForm() {
     <div className="min-h-[70vh] flex items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold tracking-tight">Financial Holdings</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Financial Management</h1>
           <p className="text-gray-500 mt-2 text-sm">Enter the password to continue.</p>
         </div>
         <form

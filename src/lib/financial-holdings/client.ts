@@ -4,7 +4,7 @@ export async function apiRequest(url: string, options?: RequestInit) {
     headers: { "Content-Type": "application/json", ...options?.headers },
   });
   if (res.status === 401) {
-    window.location.href = "/financial-holdings/login";
+    window.location.href = "/financial-management/login";
     throw new Error("Unauthorized");
   }
   if (!res.ok) {

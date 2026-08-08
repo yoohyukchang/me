@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import HoldingsPieChart, {
   type CategorySlice,
 } from "@/components/financial-holdings/holdings-pie-chart";
@@ -11,8 +10,7 @@ import { useToast } from "@/components/financial-holdings/toast";
 import { apiRequest } from "@/lib/financial-holdings/client";
 import type { Category, Stock } from "@/lib/financial-holdings/types";
 
-export default function FinancialHoldingsPage() {
-  const router = useRouter();
+export default function HoldingsTab() {
   const showToast = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [stocks, setStocks] = useState<Stock[]>([]);
@@ -84,11 +82,6 @@ export default function FinancialHoldingsPage() {
 
     return { slices: computedSlices, totalValue: total };
   }, [sortedCategories, stocks]);
-
-  async function handleLogout() {
-    await apiRequest("/api/financial-holdings/logout", { method: "POST" });
-    router.push("/financial-holdings/login");
-  }
 
   async function handleCreateCategory(name: string, color: string) {
     await apiRequest("/api/financial-holdings/categories", {
@@ -171,79 +164,53 @@ export default function FinancialHoldingsPage() {
 
   if (loading) {
     return (
-      <main className="container mx-auto px-6 py-16">
-        <div className="max-w-5xl mx-auto text-center text-gray-400 text-sm">
-          Loading…
-        </div>
-      </main>
+      <div className="text-center text-gray-400 text-sm py-16">Loading…</div>
     );
   }
 
   if (loadError) {
     return (
-      <main className="container mx-auto px-6 py-16">
-        <div className="max-w-5xl mx-auto text-center">
-          <p className="text-sm text-red-600 mb-4">{loadError}</p>
-          <button
-            type="button"
-            onClick={loadInitialData}
-            className="rounded-lg bg-black text-white text-sm font-medium px-4 py-2 hover:opacity-90 transition-opacity"
-          >
-            Retry
-          </button>
-        </div>
-      </main>
+      <div className="text-center py-16">
+        <p className="text-sm text-red-600 mb-4">{loadError}</p>
+        <button
+          type="button"
+          onClick={loadInitialData}
+          className="rounded-lg bg-black text-white text-sm font-medium px-4 py-2 hover:opacity-90 transition-opacity"
+        >
+          Retry
+        </button>
+      </div>
     );
   }
 
   return (
-    <main className="container mx-auto px-6 py-16">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-10 mt-10">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Financial Holdings
-            </h1>
-            <p className="text-gray-500 mt-2">
-              Track allocation across your own custom categories.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="text-sm text-gray-400 hover:text-gray-700 transition-colors"
-          >
-            Log out
-          </button>
-        </div>
+    <div>
+      <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8 mb-8">
+        <HoldingsPieChart slices={slices} totalValue={totalValue} />
+      </section>
 
-        <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8 mb-8">
-          <HoldingsPieChart slices={slices} totalValue={totalValue} />
-        </section>
+      <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8 mb-8">
+        <CategoryManager
+          categories={sortedCategories}
+          stockCountByCategory={stockCountByCategory}
+          onCreate={handleCreateCategory}
+          onRename={handleRenameCategory}
+          onRecolor={handleRecolorCategory}
+          onDelete={handleDeleteCategory}
+        />
+      </section>
 
-        <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8 mb-8">
-          <CategoryManager
-            categories={sortedCategories}
-            stockCountByCategory={stockCountByCategory}
-            onCreate={handleCreateCategory}
-            onRename={handleRenameCategory}
-            onRecolor={handleRecolorCategory}
-            onDelete={handleDeleteCategory}
-          />
-        </section>
-
-        <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8">
-          <StockManager
-            stocks={stocks}
-            categories={sortedCategories}
-            onCreate={handleCreateStock}
-            onUpdate={handleUpdateStock}
-            onDelete={handleDeleteStock}
-            onReorderCategories={handleReorderCategories}
-            onReorderStocks={handleReorderStocks}
-          />
-        </section>
-      </div>
-    </main>
+      <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8">
+        <StockManager
+          stocks={stocks}
+          categories={sortedCategories}
+          onCreate={handleCreateStock}
+          onUpdate={handleUpdateStock}
+          onDelete={handleDeleteStock}
+          onReorderCategories={handleReorderCategories}
+          onReorderStocks={handleReorderStocks}
+        />
+      </section>
+    </div>
   );
 }

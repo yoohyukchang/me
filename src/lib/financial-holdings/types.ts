@@ -15,3 +15,10 @@ export interface Stock {
   updatedAt: string;
   order: number;
 }
+
+export interface HistoryEntry {
+  id: string;
+  date: string;
+  netContribution: number;
+  portfolioValue: number;
+}

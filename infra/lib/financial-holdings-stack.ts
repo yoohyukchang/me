@@ -21,6 +21,13 @@ export class FinancialHoldingsStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
+    const historyTable = new dynamodb.Table(this, "HistoryTable", {
+      tableName: "FinancialHoldingsHistory",
+      partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
     // Scoped-down IAM user for the Next.js app (running on Vercel) to
     // read/write only these two tables. No console access, no other
     // AWS permissions.
@@ -41,7 +48,7 @@ export class FinancialHoldingsStack extends cdk.Stack {
             "dynamodb:Query",
             "dynamodb:Scan",
           ],
-          resources: [categoriesTable.tableArn, stocksTable.tableArn],
+          resources: [categoriesTable.tableArn, stocksTable.tableArn, historyTable.tableArn],
         }),
       ],
     });
@@ -53,6 +60,9 @@ export class FinancialHoldingsStack extends cdk.Stack {
     });
     new cdk.CfnOutput(this, "StocksTableName", {
       value: stocksTable.tableName,
+    });
+    new cdk.CfnOutput(this, "HistoryTableName", {
+      value: historyTable.tableName,
     });
     new cdk.CfnOutput(this, "AppUserName", {
       value: appUser.userName,
