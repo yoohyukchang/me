@@ -16,3 +16,5 @@ export const docClient = DynamoDBDocumentClient.from(client, {
 export const CATEGORIES_TABLE = process.env.FINANCIAL_HOLDINGS_CATEGORIES_TABLE!;
 export const STOCKS_TABLE = process.env.FINANCIAL_HOLDINGS_STOCKS_TABLE!;
 export const HISTORY_TABLE = process.env.FINANCIAL_HOLDINGS_HISTORY_TABLE!;
+export const BUDGET_CATEGORIES_TABLE = process.env.FINANCIAL_HOLDINGS_BUDGET_CATEGORIES_TABLE!;
+export const BUDGET_MONTHS_TABLE = process.env.FINANCIAL_HOLDINGS_BUDGET_MONTHS_TABLE!;

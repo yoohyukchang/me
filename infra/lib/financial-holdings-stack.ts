@@ -28,6 +28,22 @@ export class FinancialHoldingsStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
+    const budgetCategoriesTable = new dynamodb.Table(this, "BudgetCategoriesTable", {
+      tableName: "FinancialHoldingsBudgetCategories",
+      partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
+    // id = "YYYY-MM" (zero-padded), one item per calendar month, so saves
+    // are a plain idempotent PutItem keyed by the month itself.
+    const budgetMonthsTable = new dynamodb.Table(this, "BudgetMonthsTable", {
+      tableName: "FinancialHoldingsBudgetMonths",
+      partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
     // Scoped-down IAM user for the Next.js app (running on Vercel) to
     // read/write only these two tables. No console access, no other
     // AWS permissions.
@@ -48,7 +64,13 @@ export class FinancialHoldingsStack extends cdk.Stack {
             "dynamodb:Query",
             "dynamodb:Scan",
           ],
-          resources: [categoriesTable.tableArn, stocksTable.tableArn, historyTable.tableArn],
+          resources: [
+            categoriesTable.tableArn,
+            stocksTable.tableArn,
+            historyTable.tableArn,
+            budgetCategoriesTable.tableArn,
+            budgetMonthsTable.tableArn,
+          ],
         }),
       ],
     });
@@ -63,6 +85,12 @@ export class FinancialHoldingsStack extends cdk.Stack {
     });
     new cdk.CfnOutput(this, "HistoryTableName", {
       value: historyTable.tableName,
+    });
+    new cdk.CfnOutput(this, "BudgetCategoriesTableName", {
+      value: budgetCategoriesTable.tableName,
+    });
+    new cdk.CfnOutput(this, "BudgetMonthsTableName", {
+      value: budgetMonthsTable.tableName,
     });
     new cdk.CfnOutput(this, "AppUserName", {
       value: appUser.userName,

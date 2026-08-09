@@ -6,8 +6,15 @@ import {
   ScanCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { CATEGORIES_TABLE, docClient, HISTORY_TABLE, STOCKS_TABLE } from "./dynamodb-client";
-import type { Category, HistoryEntry, Stock } from "./types";
+import {
+  BUDGET_CATEGORIES_TABLE,
+  BUDGET_MONTHS_TABLE,
+  CATEGORIES_TABLE,
+  docClient,
+  HISTORY_TABLE,
+  STOCKS_TABLE,
+} from "./dynamodb-client";
+import type { BudgetCategory, BudgetMonth, Category, HistoryEntry, Stock } from "./types";
 
 export async function listCategories(): Promise<Category[]> {
   const result = await docClient.send(
@@ -241,4 +248,77 @@ export async function updateHistoryEntry(
 
 export async function deleteHistoryEntry(id: string): Promise<void> {
   await docClient.send(new DeleteCommand({ TableName: HISTORY_TABLE, Key: { id } }));
+}
+
+export async function listBudgetCategories(): Promise<BudgetCategory[]> {
+  const result = await docClient.send(
+    new ScanCommand({ TableName: BUDGET_CATEGORIES_TABLE })
+  );
+  return (result.Items ?? []) as BudgetCategory[];
+}
+
+export async function createBudgetCategory(input: {
+  name: string;
+  order: number;
+}): Promise<BudgetCategory> {
+  const category: BudgetCategory = {
+    id: randomUUID(),
+    name: input.name,
+    order: input.order,
+    archived: false,
+  };
+  await docClient.send(
+    new PutCommand({ TableName: BUDGET_CATEGORIES_TABLE, Item: category })
+  );
+  return category;
+}
+
+export async function getBudgetCategory(id: string): Promise<BudgetCategory | undefined> {
+  const result = await docClient.send(
+    new GetCommand({ TableName: BUDGET_CATEGORIES_TABLE, Key: { id } })
+  );
+  return result.Item as BudgetCategory | undefined;
+}
+
+export async function updateBudgetCategory(
+  id: string,
+  input: { name?: string; archived?: boolean }
+): Promise<void> {
+  const updates: string[] = [];
+  const values: Record<string, unknown> = {};
+  const names: Record<string, string> = {};
+
+  if (input.name !== undefined) {
+    updates.push("#name = :name");
+    names["#name"] = "name";
+    values[":name"] = input.name;
+  }
+  if (input.archived !== undefined) {
+    updates.push("#archived = :archived");
+    names["#archived"] = "archived";
+    values[":archived"] = input.archived;
+  }
+  if (updates.length === 0) return;
+
+  await docClient.send(
+    new UpdateCommand({
+      TableName: BUDGET_CATEGORIES_TABLE,
+      Key: { id },
+      UpdateExpression: `SET ${updates.join(", ")}`,
+      ExpressionAttributeNames: names,
+      ExpressionAttributeValues: values,
+    })
+  );
+}
+
+export async function listBudgetMonths(): Promise<BudgetMonth[]> {
+  const result = await docClient.send(
+    new ScanCommand({ TableName: BUDGET_MONTHS_TABLE })
+  );
+  return (result.Items ?? []) as BudgetMonth[];
+}
+
+export async function putBudgetMonth(month: BudgetMonth): Promise<BudgetMonth> {
+  await docClient.send(new PutCommand({ TableName: BUDGET_MONTHS_TABLE, Item: month }));
+  return month;
 }

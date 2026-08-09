@@ -25,3 +25,19 @@ export const CATEGORY_PALETTE = [
 export function nextPaletteColor(usedCount: number): string {
   return CATEGORY_PALETTE[usedCount % CATEGORY_PALETTE.length];
 }
+
+export function formatMonthId(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+export function parseMonthId(id: string): { year: number; month: number } {
+  const [year, month] = id.split("-").map(Number);
+  return { year, month };
+}
+
+export function monthLabel(year: number, month: number): string {
+  return new Date(year, month - 1, 1).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+}

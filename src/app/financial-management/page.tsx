@@ -4,13 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import HoldingsTab from "@/components/financial-holdings/holdings-tab";
 import HistoryTab from "@/components/financial-holdings/history-tab";
+import IncomeExpenseTab from "@/components/financial-holdings/income-expense-tab";
 import { apiRequest } from "@/lib/financial-holdings/client";
 
-type TabId = "holdings" | "history";
+type TabId = "holdings" | "history" | "income-expense";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "holdings", label: "Financial Holdings" },
   { id: "history", label: "Financial History" },
+  { id: "income-expense", label: "Income / Expense" },
 ];
 
 export default function FinancialManagementPage() {
@@ -58,7 +60,13 @@ export default function FinancialManagementPage() {
           ))}
         </div>
 
-        {activeTab === "holdings" ? <HoldingsTab /> : <HistoryTab />}
+        {activeTab === "holdings" ? (
+          <HoldingsTab />
+        ) : activeTab === "history" ? (
+          <HistoryTab />
+        ) : (
+          <IncomeExpenseTab />
+        )}
       </div>
     </main>
   );
