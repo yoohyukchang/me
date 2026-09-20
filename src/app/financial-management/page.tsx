@@ -4,15 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import HoldingsTab from "@/components/financial-holdings/holdings-tab";
 import HistoryTab from "@/components/financial-holdings/history-tab";
-import IncomeExpenseTab from "@/components/financial-holdings/income-expense-tab";
+import NetWorthTab from "@/components/financial-holdings/net-worth-tab";
 import { apiRequest } from "@/lib/financial-holdings/client";
 
-type TabId = "holdings" | "history" | "income-expense";
+type TabId = "holdings" | "net-worth" | "history";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "holdings", label: "Financial Holdings" },
+  { id: "net-worth", label: "Net Worth" },
   { id: "history", label: "Financial History" },
-  { id: "income-expense", label: "Income / Expense" },
 ];
 
 export default function FinancialManagementPage() {
@@ -43,13 +43,13 @@ export default function FinancialManagementPage() {
           </button>
         </div>
 
-        <div className="flex gap-1 border-b border-gray-200 mb-8">
+        <div className="flex gap-1 border-b border-gray-200 mb-8 overflow-x-auto">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              className={`shrink-0 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
                 activeTab === tab.id
                   ? "border-black text-black"
                   : "border-transparent text-gray-400 hover:text-gray-600"
@@ -60,13 +60,9 @@ export default function FinancialManagementPage() {
           ))}
         </div>
 
-        {activeTab === "holdings" ? (
-          <HoldingsTab />
-        ) : activeTab === "history" ? (
-          <HistoryTab />
-        ) : (
-          <IncomeExpenseTab />
-        )}
+        {activeTab === "holdings" && <HoldingsTab />}
+        <div hidden={activeTab !== "net-worth"}><NetWorthTab /></div>
+        {activeTab === "history" && <HistoryTab />}
       </div>
     </main>
   );

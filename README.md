@@ -1,5 +1,32 @@
 # Yoohyuk's personal website.
 
+## Net Worth storage
+
+Net Worth uses the `FinancialHoldingsNetWorth` DynamoDB table defined in
+`infra/lib/financial-holdings-stack.ts`. It starts empty, persists current sources,
+and stores immutable snapshots with local calendar dates and each source's exchange
+rate. Existing financial history remains separate. The existing financial login
+middleware protects the Net Worth API.
+
+Before releasing the app changes, provision the updated CDK stack. The app defaults
+to the CDK table name; this optional server-side variable overrides it:
+
+```text
+FINANCIAL_HOLDINGS_NET_WORTH_TABLE=FinancialHoldingsNetWorth
+```
+
+The existing `FINANCIAL_HOLDINGS_AWS_REGION`, access key, and secret key settings
+are reused. The stack updates the existing app user's table permissions, retains
+the table on removal, and enables point-in-time recovery. No data is seeded.
+An unavailable or unprovisioned table shows a retryable storage error.
+
+Source edits use version checks to prevent stale writes. Recording saves the
+server's current sources atomically; historical exchange rates do not change.
+Up to 100 sources are supported per snapshot to stay within DynamoDB item limits.
+
+Run `node --test tests/net-worth.test.cjs` from the repository root for validation,
+storage behavior, and local CDK synthesis checks (no AWS access needed).
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
