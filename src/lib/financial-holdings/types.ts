@@ -22,24 +22,3 @@ export interface HistoryEntry {
   netContribution: number;
   portfolioValue: number;
 }
-
-export interface BudgetCategory {
-  id: string;
-  name: string;
-  order: number;
-  archived: boolean;
-}
-
-export interface BudgetAllocation {
-  categoryId: string;
-  percentage: number;
-  spent: number;
-}
-
-export interface BudgetMonth {
-  id: string;
-  year: number;
-  month: number;
-  income: number;
-  allocations: BudgetAllocation[];
-}
