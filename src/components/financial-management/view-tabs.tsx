@@ -57,25 +57,28 @@ export default function ViewTabs({
     }
   }
 
+  const activeView = views.find((v) => v.id === activeViewId);
+
   return (
-    <div className="flex items-center gap-1.5 flex-wrap mb-5">
-      {views.map((view) =>
-        editingId === view.id ? (
-          <input
-            key={view.id}
-            autoFocus
-            value={editingName}
-            onChange={(e) => setEditingName(e.target.value)}
-            onBlur={() => saveEditing(view.id)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") saveEditing(view.id);
-              if (e.key === "Escape") setEditingId(null);
-            }}
-            className="rounded-full border border-gray-300 px-3.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-          />
-        ) : (
-          <div key={view.id} className="flex items-center gap-1">
+    <div className="mb-5">
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {views.map((view) =>
+          editingId === view.id ? (
+            <input
+              key={view.id}
+              autoFocus
+              value={editingName}
+              onChange={(e) => setEditingName(e.target.value)}
+              onBlur={() => saveEditing(view.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveEditing(view.id);
+                if (e.key === "Escape") setEditingId(null);
+              }}
+              className="rounded-full border border-gray-300 px-3.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+            />
+          ) : (
             <button
+              key={view.id}
               type="button"
               onClick={() => onSelect(view.id)}
               onDoubleClick={() => startEditing(view)}
@@ -87,52 +90,53 @@ export default function ViewTabs({
             >
               {view.name}
             </button>
-            {activeViewId === view.id && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => startEditing(view)}
-                  className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
-                >
-                  Edit
-                </button>
-                {views.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(view.id)}
-                    className="text-xs text-gray-400 hover:text-red-600 transition-colors"
-                  >
-                    Remove
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        )
-      )}
+          )
+        )}
 
-      {adding ? (
-        <form onSubmit={handleCreate} className="flex items-center gap-1.5">
-          <input
-            autoFocus
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onBlur={() => !name.trim() && setAdding(false)}
-            placeholder="View name"
-            className="rounded-full border border-gray-300 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-          />
-          <button type="submit" className="text-xs font-medium text-accent">
-            Add
+        {adding ? (
+          <form onSubmit={handleCreate} className="flex items-center gap-1.5">
+            <input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onBlur={() => !name.trim() && setAdding(false)}
+              placeholder="View name"
+              className="rounded-full border border-gray-300 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+            />
+            <button type="submit" className="text-xs font-medium text-accent">
+              Add
+            </button>
+          </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="rounded-full px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-gray-700 transition-colors"
+          >
+            + New view
           </button>
-        </form>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setAdding(true)}
-          className="rounded-full px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-gray-700 transition-colors"
-        >
-          + New view
-        </button>
+        )}
+      </div>
+
+      {activeView && editingId !== activeView.id && (
+        <div className="flex items-center gap-3 mt-1.5 pl-0.5">
+          <button
+            type="button"
+            onClick={() => startEditing(activeView)}
+            className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
+          >
+            Edit
+          </button>
+          {views.length > 1 && (
+            <button
+              type="button"
+              onClick={() => handleDelete(activeView.id)}
+              className="text-xs text-gray-400 hover:text-red-600 transition-colors"
+            >
+              Remove
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
