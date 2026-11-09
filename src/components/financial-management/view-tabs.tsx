@@ -2,20 +2,28 @@
 
 import { useState } from "react";
 import type { View } from "@/lib/financial-management/types";
+import { useToast } from "./toast";
 
 export default function ViewTabs({
   views,
   activeViewId,
   onSelect,
   onCreate,
+  onRename,
+  onDelete,
 }: {
   views: View[];
   activeViewId: string | null;
   onSelect: (id: string) => void;
   onCreate: (name: string) => Promise<void>;
+  onRename: (id: string, name: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const showToast = useToast();
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -25,22 +33,83 @@ export default function ViewTabs({
     setAdding(false);
   }
 
+  function startEditing(view: View) {
+    setEditingId(view.id);
+    setEditingName(view.name);
+  }
+
+  async function saveEditing(id: string) {
+    const trimmed = editingName.trim();
+    setEditingId(null);
+    if (trimmed.length === 0) return;
+    try {
+      await onRename(id, trimmed);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to rename view", "error");
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await onDelete(id);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to remove view", "error");
+    }
+  }
+
   return (
-    <div className="flex items-center gap-1 flex-wrap mb-5">
-      {views.map((view) => (
-        <button
-          key={view.id}
-          type="button"
-          onClick={() => onSelect(view.id)}
-          className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
-            activeViewId === view.id
-              ? "bg-black text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-          }`}
-        >
-          {view.name}
-        </button>
-      ))}
+    <div className="flex items-center gap-1.5 flex-wrap mb-5">
+      {views.map((view) =>
+        editingId === view.id ? (
+          <input
+            key={view.id}
+            autoFocus
+            value={editingName}
+            onChange={(e) => setEditingName(e.target.value)}
+            onBlur={() => saveEditing(view.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") saveEditing(view.id);
+              if (e.key === "Escape") setEditingId(null);
+            }}
+            className="rounded-full border border-gray-300 px-3.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+          />
+        ) : (
+          <div key={view.id} className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onSelect(view.id)}
+              onDoubleClick={() => startEditing(view)}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                activeViewId === view.id
+                  ? "bg-black text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {view.name}
+            </button>
+            {activeViewId === view.id && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => startEditing(view)}
+                  className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
+                >
+                  Edit
+                </button>
+                {views.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(view.id)}
+                    className="text-xs text-gray-400 hover:text-red-600 transition-colors"
+                  >
+                    Remove
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        )
+      )}
 
       {adding ? (
         <form onSubmit={handleCreate} className="flex items-center gap-1.5">

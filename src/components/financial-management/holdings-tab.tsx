@@ -101,16 +101,16 @@ export default function HoldingsTab({ dataVersion }: { dataVersion: number }) {
 
   const { slices, totalValue } = useMemo(() => {
     const totalsByCategory = new Map<string, number>();
-    let total = 0;
     for (const row of holdingRows) {
       const categoryId = assignmentByKey[row.holdingKey] ?? UNCATEGORIZED_ID;
       totalsByCategory.set(categoryId, (totalsByCategory.get(categoryId) ?? 0) + row.valueUsd);
-      total += row.valueUsd;
     }
-    // Uncategorized holdings count toward the "Total value" figure (the true
-    // portfolio value) but never appear as a slice — categorized is the whole
-    // pie, so each slice's percent is of the categorized total, not of total.
-    const categorizedTotal = total - (totalsByCategory.get(UNCATEGORIZED_ID) ?? 0);
+    // Uncategorized holdings never appear as a slice, and don't count toward
+    // the pie's "Total value" either — it's the total of what's actually
+    // shown, not the whole portfolio.
+    const categorizedTotal = [...totalsByCategory.entries()]
+      .filter(([categoryId]) => categoryId !== UNCATEGORIZED_ID)
+      .reduce((sum, [, value]) => sum + value, 0);
     const named: CategorySlice[] = categories.map((category) => ({
       id: category.id,
       name: category.name,
@@ -118,7 +118,7 @@ export default function HoldingsTab({ dataVersion }: { dataVersion: number }) {
       total: totalsByCategory.get(category.id) ?? 0,
       percent: categorizedTotal > 0 ? ((totalsByCategory.get(category.id) ?? 0) / categorizedTotal) * 100 : 0,
     }));
-    return { slices: named.filter((s) => s.total > 0), totalValue: total };
+    return { slices: named.filter((s) => s.total > 0), totalValue: categorizedTotal };
   }, [holdingRows, assignmentByKey, categories]);
 
   async function handleCreateView(name: string) {
@@ -128,6 +128,21 @@ export default function HoldingsTab({ dataVersion }: { dataVersion: number }) {
     });
     setViews((prev) => [...prev, data.view]);
     setActiveViewId(data.view.id);
+  }
+
+  async function handleRenameView(id: string, name: string) {
+    await apiRequest(`/api/financial-management/views/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ name }),
+    });
+    setViews((prev) => prev.map((v) => (v.id === id ? { ...v, name } : v)));
+  }
+
+  async function handleDeleteView(id: string) {
+    await apiRequest(`/api/financial-management/views/${id}`, { method: "DELETE" });
+    const remaining = views.filter((v) => v.id !== id);
+    setViews(remaining);
+    if (activeViewId === id) setActiveViewId(remaining[0]?.id ?? null);
   }
 
   async function handleCategoryChange(holdingKey: string, categoryId: string) {
@@ -244,6 +259,8 @@ export default function HoldingsTab({ dataVersion }: { dataVersion: number }) {
         activeViewId={activeViewId}
         onSelect={setActiveViewId}
         onCreate={handleCreateView}
+        onRename={handleRenameView}
+        onDelete={handleDeleteView}
       />
 
       <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8 mb-8">

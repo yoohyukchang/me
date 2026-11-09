@@ -162,9 +162,11 @@ every view — that bucket is computed at read time, never stored. Within
 each category (and within Uncategorized), holdings are always ordered by
 USD value, highest first — there's no manual holding order to maintain.
 The pie chart on Portfolio Holdings only ever shows categorized holdings —
-Uncategorized value still counts toward the "Total value" figure in its
-center, but never gets its own slice, so each slice's percent is of the
-categorized total, not of the whole portfolio.
+Uncategorized value gets neither its own slice nor any weight in the
+"Total value" figure at its center, which is the sum of what's actually
+shown, not the whole portfolio (that whole-portfolio figure is what the
+Holdings section's own total and Net Worth report instead). Each view has
+its own pie, since each view has its own categorization.
 
 ## Schedule & failure handling
 
