@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isValidSessionToken, SESSION_COOKIE_NAME } from "@/lib/financial-holdings/session";
+import { isValidSessionToken, SESSION_COOKIE_NAME } from "@/lib/financial-management/session";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isLoginPage = pathname === "/financial-management/login";
-  const isLoginApi = pathname === "/api/financial-holdings/login";
-  if (isLoginPage || isLoginApi) {
+  const isLoginApi = pathname === "/api/financial-management/login";
+  const isPlaidWebhook = pathname === "/api/financial-management/plaid/webhook";
+  if (isLoginPage || isLoginApi || isPlaidWebhook) {
     return NextResponse.next();
   }
 
@@ -17,7 +18,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (pathname.startsWith("/api/financial-holdings")) {
+  if (pathname.startsWith("/api/financial-management")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -27,5 +28,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/financial-management/:path*", "/api/financial-holdings/:path*"],
+  matcher: ["/financial-management/:path*", "/api/financial-management/:path*"],
 };

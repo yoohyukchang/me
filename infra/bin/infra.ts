@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import "source-map-support/register";
 import * as cdk from "aws-cdk-lib";
-import { FinancialHoldingsStack } from "../lib/financial-holdings-stack";
+import { FinancialManagementStack } from "../lib/financial-management-stack";
 
 const app = new cdk.App();
 
-new FinancialHoldingsStack(app, "FinancialHoldingsStack", {
+new FinancialManagementStack(app, "FinancialManagementStack", {
   env: {
     account: "149536467459",
     region: "us-west-2",

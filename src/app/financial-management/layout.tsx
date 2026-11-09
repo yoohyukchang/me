@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ToastProvider } from "@/components/financial-holdings/toast";
+import { ToastProvider } from "@/components/financial-management/toast";
 
 export const metadata: Metadata = {
   title: "Financial Management",
