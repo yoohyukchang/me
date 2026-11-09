@@ -161,6 +161,10 @@ holding you set back to "Uncategorized", shows under "Uncategorized" in
 every view — that bucket is computed at read time, never stored. Within
 each category (and within Uncategorized), holdings are always ordered by
 USD value, highest first — there's no manual holding order to maintain.
+The pie chart on Portfolio Holdings only ever shows categorized holdings —
+Uncategorized value still counts toward the "Total value" figure in its
+center, but never gets its own slice, so each slice's percent is of the
+categorized total, not of the whole portfolio.
 
 ## Schedule & failure handling
 

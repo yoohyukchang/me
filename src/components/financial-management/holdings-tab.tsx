@@ -107,23 +107,17 @@ export default function HoldingsTab({ dataVersion }: { dataVersion: number }) {
       totalsByCategory.set(categoryId, (totalsByCategory.get(categoryId) ?? 0) + row.valueUsd);
       total += row.valueUsd;
     }
+    // Uncategorized holdings count toward the "Total value" figure (the true
+    // portfolio value) but never appear as a slice — categorized is the whole
+    // pie, so each slice's percent is of the categorized total, not of total.
+    const categorizedTotal = total - (totalsByCategory.get(UNCATEGORIZED_ID) ?? 0);
     const named: CategorySlice[] = categories.map((category) => ({
       id: category.id,
       name: category.name,
       color: category.color,
       total: totalsByCategory.get(category.id) ?? 0,
-      percent: total > 0 ? ((totalsByCategory.get(category.id) ?? 0) / total) * 100 : 0,
+      percent: categorizedTotal > 0 ? ((totalsByCategory.get(category.id) ?? 0) / categorizedTotal) * 100 : 0,
     }));
-    const uncategorizedTotal = totalsByCategory.get(UNCATEGORIZED_ID) ?? 0;
-    if (uncategorizedTotal > 0) {
-      named.push({
-        id: UNCATEGORIZED_ID,
-        name: "Uncategorized",
-        color: "#9ca3af",
-        total: uncategorizedTotal,
-        percent: total > 0 ? (uncategorizedTotal / total) * 100 : 0,
-      });
-    }
     return { slices: named.filter((s) => s.total > 0), totalValue: total };
   }, [holdingRows, assignmentByKey, categories]);
 
