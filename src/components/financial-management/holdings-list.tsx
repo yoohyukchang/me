@@ -18,10 +18,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { Category, Currency, UnifiedHolding } from "@/lib/financial-management/types";
+import { UNCATEGORIZED_ID, type Category, type Currency, type UnifiedHolding } from "@/lib/financial-management/types";
 import { formatPercent } from "@/lib/financial-management/format";
-
-export const UNCATEGORIZED_ID = "__uncategorized__";
 
 function money(amount: number, currency: Currency): string {
   return new Intl.NumberFormat("en-US", {
@@ -49,7 +47,7 @@ function HoldingRowView({
   categories,
   categoryId,
   groupPercent,
-  draggable,
+  totalPercent,
   onCategoryChange,
   onEditManual,
   onDeleteManual,
@@ -58,38 +56,14 @@ function HoldingRowView({
   categories: Category[];
   categoryId: string;
   groupPercent: number;
-  draggable: boolean;
+  totalPercent: number;
   onCategoryChange: (holdingKey: string, categoryId: string) => void;
   onEditManual: (holding: UnifiedHolding) => void;
   onDeleteManual: (holdingKey: string) => void;
 }) {
-  const sortable = useSortable({
-    id: holding.holdingKey,
-    data: { type: "holding", categoryId },
-    disabled: !draggable,
-  });
-  const style = {
-    transform: CSS.Transform.toString(sortable.transform),
-    transition: sortable.transition,
-    opacity: sortable.isDragging ? 0.5 : 1,
-  };
-
   return (
-    <tr ref={sortable.setNodeRef} style={style} className="border-b border-gray-100 last:border-0">
-      <td className="py-3 pl-3 pr-1 w-7">
-        {draggable && (
-          <button
-            type="button"
-            {...sortable.attributes}
-            {...sortable.listeners}
-            className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none"
-            aria-label="Drag to reorder holding"
-          >
-            <GripIcon />
-          </button>
-        )}
-      </td>
-      <td className="py-3 pr-4">
+    <tr className="border-b border-gray-100 last:border-0">
+      <td className="py-3 pl-3 pr-4">
         <div className="text-sm font-semibold text-gray-900">{holding.ticker ?? holding.name}</div>
         <div className="text-xs text-gray-500">
           {holding.name} · {holding.accountName}
@@ -106,6 +80,9 @@ function HoldingRowView({
       </td>
       <td className="py-3 pr-4 text-sm text-gray-500 text-right tabular-nums">
         {formatPercent(groupPercent)}
+      </td>
+      <td className="py-3 pr-4 text-sm text-gray-500 text-right tabular-nums">
+        {formatPercent(totalPercent)}
       </td>
       <td className="py-3 pr-3">
         <div className="flex items-center gap-3">
@@ -149,7 +126,7 @@ function GroupTable({
   holdings,
   categories,
   categoryId,
-  draggable,
+  portfolioTotalUsd,
   onCategoryChange,
   onEditManual,
   onDeleteManual,
@@ -157,50 +134,42 @@ function GroupTable({
   holdings: UnifiedHolding[];
   categories: Category[];
   categoryId: string;
-  draggable: boolean;
+  portfolioTotalUsd: number;
   onCategoryChange: (holdingKey: string, categoryId: string) => void;
   onEditManual: (holding: UnifiedHolding) => void;
   onDeleteManual: (holdingKey: string) => void;
 }) {
-  const groupTotal = holdings.reduce((sum, h) => sum + h.valueUsd, 0);
-  const rows = (
-    <tbody>
-      {holdings.map((holding) => (
-        <HoldingRowView
-          key={holding.holdingKey}
-          holding={holding}
-          categories={categories}
-          categoryId={categoryId}
-          groupPercent={groupTotal > 0 ? (holding.valueUsd / groupTotal) * 100 : 0}
-          draggable={draggable}
-          onCategoryChange={onCategoryChange}
-          onEditManual={onEditManual}
-          onDeleteManual={onDeleteManual}
-        />
-      ))}
-    </tbody>
-  );
+  const sorted = [...holdings].sort((a, b) => b.valueUsd - a.valueUsd);
+  const groupTotal = sorted.reduce((sum, h) => sum + h.valueUsd, 0);
 
   return (
     <table className="w-full">
       <thead>
         <tr className="border-b border-gray-200 text-xs text-gray-500">
-          <th className="pb-2 w-7" />
-          <th className="text-left font-medium pb-2 pr-4 pt-2.5">Holding</th>
+          <th className="text-left font-medium pb-2 pl-3 pr-4 pt-2.5">Holding</th>
           <th className="text-right font-medium pb-2 pr-4 pt-2.5">Shares</th>
           <th className="text-right font-medium pb-2 pr-4 pt-2.5">Price</th>
           <th className="text-right font-medium pb-2 pr-4 pt-2.5">Value</th>
           <th className="text-right font-medium pb-2 pr-4 pt-2.5">% of group</th>
+          <th className="text-right font-medium pb-2 pr-4 pt-2.5">% of total</th>
           <th className="text-left font-medium pb-2 pr-3 pt-2.5">Category</th>
         </tr>
       </thead>
-      {draggable ? (
-        <SortableContext items={holdings.map((h) => h.holdingKey)} strategy={verticalListSortingStrategy}>
-          {rows}
-        </SortableContext>
-      ) : (
-        rows
-      )}
+      <tbody>
+        {sorted.map((holding) => (
+          <HoldingRowView
+            key={holding.holdingKey}
+            holding={holding}
+            categories={categories}
+            categoryId={categoryId}
+            groupPercent={groupTotal > 0 ? (holding.valueUsd / groupTotal) * 100 : 0}
+            totalPercent={portfolioTotalUsd > 0 ? (holding.valueUsd / portfolioTotalUsd) * 100 : 0}
+            onCategoryChange={onCategoryChange}
+            onEditManual={onEditManual}
+            onDeleteManual={onDeleteManual}
+          />
+        ))}
+      </tbody>
     </table>
   );
 }
@@ -209,6 +178,7 @@ function CategoryGroup({
   category,
   holdings,
   categories,
+  portfolioTotalUsd,
   onCategoryChange,
   onEditManual,
   onDeleteManual,
@@ -216,6 +186,7 @@ function CategoryGroup({
   category: Category;
   holdings: UnifiedHolding[];
   categories: Category[];
+  portfolioTotalUsd: number;
   onCategoryChange: (holdingKey: string, categoryId: string) => void;
   onEditManual: (holding: UnifiedHolding) => void;
   onDeleteManual: (holdingKey: string) => void;
@@ -246,13 +217,15 @@ function CategoryGroup({
         </span>
       </div>
       {holdings.length === 0 ? (
-        <p className="text-sm text-gray-400 px-3.5 py-3">Nothing here yet — drag a holding in.</p>
+        <p className="text-sm text-gray-400 px-3.5 py-3">
+          Nothing here yet — use a holding&apos;s Category dropdown to add one.
+        </p>
       ) : (
         <GroupTable
           holdings={holdings}
           categories={categories}
           categoryId={category.id}
-          draggable
+          portfolioTotalUsd={portfolioTotalUsd}
           onCategoryChange={onCategoryChange}
           onEditManual={onEditManual}
           onDeleteManual={onDeleteManual}
@@ -266,18 +239,18 @@ export default function HoldingsList({
   holdings,
   categories,
   assignments,
+  portfolioTotalUsd,
   onCategoryChange,
   onReorderCategories,
-  onReorderHoldings,
   onEditManual,
   onDeleteManual,
 }: {
   holdings: UnifiedHolding[];
   categories: Category[];
   assignments: Record<string, string>;
+  portfolioTotalUsd: number;
   onCategoryChange: (holdingKey: string, categoryId: string) => void;
   onReorderCategories: (orderedIds: string[]) => void;
-  onReorderHoldings: (orderedKeys: string[]) => void;
   onEditManual: (holding: UnifiedHolding) => void;
   onDeleteManual: (holdingKey: string) => void;
 }) {
@@ -308,18 +281,6 @@ export default function HoldingsList({
       const newIndex = categories.findIndex((c) => c.id === over.id);
       if (oldIndex === -1 || newIndex === -1) return;
       onReorderCategories(arrayMove(categories, oldIndex, newIndex).map((c) => c.id));
-      return;
-    }
-
-    if (activeType === "holding") {
-      const draggedCategoryId = active.data.current?.categoryId as string | undefined;
-      const overCategoryId = over.data.current?.categoryId as string | undefined;
-      if (!draggedCategoryId || draggedCategoryId !== overCategoryId) return;
-      const groupHoldings = byCategory[draggedCategoryId] ?? [];
-      const oldIndex = groupHoldings.findIndex((h) => h.holdingKey === active.id);
-      const newIndex = groupHoldings.findIndex((h) => h.holdingKey === over.id);
-      if (oldIndex === -1 || newIndex === -1) return;
-      onReorderHoldings(arrayMove(groupHoldings, oldIndex, newIndex).map((h) => h.holdingKey));
     }
   }
 
@@ -338,7 +299,7 @@ export default function HoldingsList({
             holdings={uncategorized}
             categories={categories}
             categoryId={UNCATEGORIZED_ID}
-            draggable={false}
+            portfolioTotalUsd={portfolioTotalUsd}
             onCategoryChange={onCategoryChange}
             onEditManual={onEditManual}
             onDeleteManual={onDeleteManual}
@@ -358,6 +319,7 @@ export default function HoldingsList({
                   category={category}
                   holdings={byCategory[category.id] ?? []}
                   categories={categories}
+                  portfolioTotalUsd={portfolioTotalUsd}
                   onCategoryChange={onCategoryChange}
                   onEditManual={onEditManual}
                   onDeleteManual={onDeleteManual}

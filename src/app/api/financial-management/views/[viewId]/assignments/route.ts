@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listAssignments, setAssignment } from "@/lib/financial-management/store/views";
+import { deleteAssignment, listAssignments, setAssignment } from "@/lib/financial-management/store/views";
+import { UNCATEGORIZED_ID } from "@/lib/financial-management/types";
 
 export const dynamic = "force-dynamic";
 
@@ -18,9 +19,10 @@ export async function PATCH(
   if (typeof body?.holdingKey !== "string" || typeof body?.categoryId !== "string") {
     return NextResponse.json({ error: "holdingKey and categoryId are required" }, { status: 400 });
   }
-  const existing = await listAssignments(viewId);
-  const current = existing.find((a) => a.holdingKey === body.holdingKey);
-  const order = current?.order ?? existing.length;
-  await setAssignment(viewId, body.holdingKey, body.categoryId, order);
+  if (body.categoryId === UNCATEGORIZED_ID) {
+    await deleteAssignment(viewId, body.holdingKey);
+  } else {
+    await setAssignment(viewId, body.holdingKey, body.categoryId);
+  }
   return NextResponse.json({ ok: true });
 }

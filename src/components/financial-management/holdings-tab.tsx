@@ -3,13 +3,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import HoldingsPieChart, { type CategorySlice } from "@/components/financial-management/holdings-pie-chart";
 import CategoryManager from "@/components/financial-management/category-manager";
-import HoldingsList, { UNCATEGORIZED_ID } from "@/components/financial-management/holdings-list";
+import HoldingsList from "@/components/financial-management/holdings-list";
 import ManualHoldingForm from "@/components/financial-management/manual-holding-form";
 import ViewTabs from "@/components/financial-management/view-tabs";
 import { useToast } from "@/components/financial-management/toast";
 import { apiRequest } from "@/lib/financial-management/client";
 import { formatRelativeTime } from "@/lib/financial-management/format";
-import type { Assignment, Category, ManualHolding, UnifiedHolding, View } from "@/lib/financial-management/types";
+import {
+  UNCATEGORIZED_ID,
+  type Assignment,
+  type Category,
+  type ManualHolding,
+  type UnifiedHolding,
+  type View,
+} from "@/lib/financial-management/types";
 
 const DEFAULT_VIEW_NAME = "By Category";
 
@@ -131,7 +138,6 @@ export default function HoldingsTab({ dataVersion }: { dataVersion: number }) {
 
   async function handleCategoryChange(holdingKey: string, categoryId: string) {
     if (!activeViewId) return;
-    if (categoryId === UNCATEGORIZED_ID) return; // dropdown doesn't support un-assigning
     try {
       await apiRequest(`/api/financial-management/views/${activeViewId}/assignments`, {
         method: "PATCH",
@@ -191,19 +197,6 @@ export default function HoldingsTab({ dataVersion }: { dataVersion: number }) {
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to reorder categories", "error");
       await loadViewData(activeViewId);
-    }
-  }
-
-  async function handleReorderHoldings(orderedKeys: string[]) {
-    if (!activeViewId) return;
-    try {
-      await apiRequest(`/api/financial-management/views/${activeViewId}/assignments/reorder`, {
-        method: "POST",
-        body: JSON.stringify({ orderedKeys }),
-      });
-      await loadViewData(activeViewId);
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "Failed to reorder holdings", "error");
     }
   }
 
@@ -305,9 +298,9 @@ export default function HoldingsTab({ dataVersion }: { dataVersion: number }) {
           holdings={holdingRows}
           categories={categories}
           assignments={assignmentByKey}
+          portfolioTotalUsd={totalValue}
           onCategoryChange={handleCategoryChange}
           onReorderCategories={handleReorderCategories}
-          onReorderHoldings={handleReorderHoldings}
           onEditManual={handleEditManual}
           onDeleteManual={handleDeleteManual}
         />

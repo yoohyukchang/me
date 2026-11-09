@@ -1,5 +1,8 @@
 export type Currency = "USD" | "KRW";
 
+/** Sentinel categoryId for a holding with no row in `FinancialHoldingsAssignments` — computed at read time, never stored. */
+export const UNCATEGORIZED_ID = "__uncategorized__";
+
 export function toUsd(amount: number, currency: Currency, rateWonPerUsd: number): number {
   return currency === "USD" ? amount : amount / rateWonPerUsd;
 }
@@ -164,7 +167,6 @@ export interface Assignment {
   viewId: string;
   holdingKey: string;
   categoryId: string;
-  order: number;
 }
 
 /** A weekly, automatic fact: what the whole portfolio (Plaid + manual holdings) was worth. */

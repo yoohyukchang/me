@@ -163,21 +163,12 @@ export async function listAssignments(viewId: string): Promise<Assignment[]> {
 export async function setAssignment(
   viewId: string,
   holdingKey: string,
-  categoryId: string,
-  order: number
+  categoryId: string
 ): Promise<void> {
-  const assignment: Assignment = { viewId, holdingKey, categoryId, order };
+  const assignment: Assignment = { viewId, holdingKey, categoryId };
   await docClient.send(new PutCommand({ TableName: ASSIGNMENTS_TABLE, Item: assignment }));
 }
 
-export async function reorderAssignments(viewId: string, orderedKeys: string[]): Promise<void> {
-  const assignments = await listAssignments(viewId);
-  const categoryByKey = new Map(assignments.map((a) => [a.holdingKey, a.categoryId]));
-  await Promise.all(
-    orderedKeys.map((holdingKey, index) => {
-      const categoryId = categoryByKey.get(holdingKey);
-      if (!categoryId) return Promise.resolve();
-      return setAssignment(viewId, holdingKey, categoryId, index);
-    })
-  );
+export async function deleteAssignment(viewId: string, holdingKey: string): Promise<void> {
+  await docClient.send(new DeleteCommand({ TableName: ASSIGNMENTS_TABLE, Key: { viewId, holdingKey } }));
 }

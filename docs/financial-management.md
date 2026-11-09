@@ -152,11 +152,15 @@ holdings — it stays Chase + BOA + Fidelity only.
 ## Views
 
 A "view" is an independent grouping of the same underlying holdings — its
-own ordered categories, its own holding→category assignments. The default
-view is "By Category"; add more from the Portfolio Holdings tab's "+ New
-view" control. A new holding (or a view with nothing assigned yet) shows
-under "Uncategorized" in every view until you drag or select it into a
-category — that bucket is computed at read time, never stored.
+own ordered categories (drag to reorder), its own holding→category
+assignments (set per holding from its row's Category dropdown, including
+back to "Uncategorized", which deletes the assignment row rather than
+storing a sentinel). The default view is "By Category"; add more from the
+Portfolio Holdings tab's "+ New view" control. A new holding, or any
+holding you set back to "Uncategorized", shows under "Uncategorized" in
+every view — that bucket is computed at read time, never stored. Within
+each category (and within Uncategorized), holdings are always ordered by
+USD value, highest first — there's no manual holding order to maintain.
 
 ## Schedule & failure handling
 
