@@ -99,7 +99,7 @@ export default function HoldingsTab({ dataVersion }: { dataVersion: number }) {
     return counts;
   }, [holdingRows, assignmentByKey]);
 
-  const { slices, totalValue } = useMemo(() => {
+  const { slices, totalValue, uncategorizedTotal } = useMemo(() => {
     const totalsByCategory = new Map<string, number>();
     for (const row of holdingRows) {
       const categoryId = assignmentByKey[row.holdingKey] ?? UNCATEGORIZED_ID;
@@ -107,7 +107,8 @@ export default function HoldingsTab({ dataVersion }: { dataVersion: number }) {
     }
     // Uncategorized holdings never appear as a slice, and don't count toward
     // the pie's "Total value" either — it's the total of what's actually
-    // shown, not the whole portfolio.
+    // shown, not the whole portfolio. The component still surfaces the
+    // uncategorized sum separately, outside the chart, so it reconciles.
     const categorizedTotal = [...totalsByCategory.entries()]
       .filter(([categoryId]) => categoryId !== UNCATEGORIZED_ID)
       .reduce((sum, [, value]) => sum + value, 0);
@@ -118,7 +119,11 @@ export default function HoldingsTab({ dataVersion }: { dataVersion: number }) {
       total: totalsByCategory.get(category.id) ?? 0,
       percent: categorizedTotal > 0 ? ((totalsByCategory.get(category.id) ?? 0) / categorizedTotal) * 100 : 0,
     }));
-    return { slices: named.filter((s) => s.total > 0), totalValue: categorizedTotal };
+    return {
+      slices: named.filter((s) => s.total > 0),
+      totalValue: categorizedTotal,
+      uncategorizedTotal: totalsByCategory.get(UNCATEGORIZED_ID) ?? 0,
+    };
   }, [holdingRows, assignmentByKey, categories]);
 
   async function handleCreateView(name: string) {
@@ -251,7 +256,7 @@ export default function HoldingsTab({ dataVersion }: { dataVersion: number }) {
             Last synced {formatRelativeTime(lastSyncedAt)}
           </span>
         </div>
-        <HoldingsPieChart slices={slices} totalValue={totalValue} />
+        <HoldingsPieChart slices={slices} totalValue={totalValue} uncategorizedTotal={uncategorizedTotal} />
       </section>
 
       <ViewTabs

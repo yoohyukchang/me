@@ -43,11 +43,15 @@ function ChartTooltip({
 export default function HoldingsPieChart({
   slices,
   totalValue,
+  uncategorizedTotal,
 }: {
   slices: CategorySlice[];
   totalValue: number;
+  uncategorizedTotal: number;
 }) {
-  if (totalValue <= 0) {
+  const portfolioTotal = totalValue + uncategorizedTotal;
+
+  if (portfolioTotal <= 0) {
     return (
       <div className="flex h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 text-center px-6">
         <p className="text-sm text-gray-500">
@@ -60,57 +64,87 @@ export default function HoldingsPieChart({
   return (
     <div className="flex flex-col md:flex-row items-center gap-8">
       <div className="relative h-72 w-72 shrink-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={slices}
-              dataKey="total"
-              nameKey="name"
-              innerRadius="62%"
-              outerRadius="92%"
-              paddingAngle={slices.length > 1 ? 2 : 0}
-              stroke="#ffffff"
-              strokeWidth={2}
-              isAnimationActive={false}
-            >
-              {slices.map((slice) => (
-                <Cell key={slice.id} fill={slice.color} />
-              ))}
-            </Pie>
-            <Tooltip content={<ChartTooltip />} />
-          </PieChart>
-        </ResponsiveContainer>
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+        {slices.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={slices}
+                dataKey="total"
+                nameKey="name"
+                innerRadius="62%"
+                outerRadius="92%"
+                paddingAngle={slices.length > 1 ? 2 : 0}
+                stroke="#ffffff"
+                strokeWidth={2}
+                isAnimationActive={false}
+              >
+                {slices.map((slice) => (
+                  <Cell key={slice.id} fill={slice.color} />
+                ))}
+              </Pie>
+              <Tooltip content={<ChartTooltip />} />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="h-full w-full rounded-full border-[18px] border-gray-100" />
+        )}
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-8 text-center">
           <span className="text-2xl font-bold tracking-tight text-gray-900">
             {formatCurrency(totalValue)}
           </span>
-          <span className="text-xs text-gray-500 mt-1">Total value</span>
+          <span className="text-xs text-gray-500 mt-1">
+            {uncategorizedTotal > 0 ? "Categorized value" : "Total value"}
+          </span>
         </div>
       </div>
 
       <div className="w-full space-y-2.5">
-        {slices
-          .slice()
-          .sort((a, b) => b.total - a.total)
-          .map((slice) => (
-            <div key={slice.id} className="flex items-center justify-between gap-4">
+        {slices.length > 0 ? (
+          slices
+            .slice()
+            .sort((a, b) => b.total - a.total)
+            .map((slice) => (
+              <div key={slice.id} className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: slice.color }}
+                  />
+                  <span className="text-sm text-gray-700 truncate">{slice.name}</span>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-sm text-gray-500">
+                    {formatCurrency(slice.total)}
+                  </span>
+                  <span className="text-sm font-semibold text-gray-900 w-14 text-right">
+                    {formatPercent(slice.percent)}
+                  </span>
+                </div>
+              </div>
+            ))
+        ) : (
+          <p className="text-sm text-gray-400">
+            Categorize a holding below to see your allocation here.
+          </p>
+        )}
+
+        {uncategorizedTotal > 0 && (
+          <>
+            <div className="flex items-center justify-between gap-4 border-t border-dashed border-gray-200 pt-2.5">
               <div className="flex items-center gap-2 min-w-0">
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: slice.color }}
-                />
-                <span className="text-sm text-gray-700 truncate">{slice.name}</span>
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-gray-300" />
+                <span className="text-sm text-gray-400 truncate">Uncategorized</span>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <span className="text-sm text-gray-500">
-                  {formatCurrency(slice.total)}
-                </span>
-                <span className="text-sm font-semibold text-gray-900 w-14 text-right">
-                  {formatPercent(slice.percent)}
-                </span>
-              </div>
+              <span className="text-sm text-gray-400">{formatCurrency(uncategorizedTotal)}</span>
             </div>
-          ))}
+            <div className="flex items-center justify-between gap-4 border-t border-gray-200 pt-2.5">
+              <span className="text-sm font-semibold text-gray-900">Portfolio total</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {formatCurrency(portfolioTotal)}
+              </span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

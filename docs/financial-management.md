@@ -163,10 +163,11 @@ each category (and within Uncategorized), holdings are always ordered by
 USD value, highest first — there's no manual holding order to maintain.
 The pie chart on Portfolio Holdings only ever shows categorized holdings —
 Uncategorized value gets neither its own slice nor any weight in the
-"Total value" figure at its center, which is the sum of what's actually
-shown, not the whole portfolio (that whole-portfolio figure is what the
-Holdings section's own total and Net Worth report instead). Each view has
-its own pie, since each view has its own categorization.
+figure at its center. It isn't hidden, though: it still shows as its own
+muted line below the category legend, followed by a "Portfolio total" line
+reconciling the two, so it's visible that categorized + uncategorized
+sums to everything you own. Each view has its own pie, since each view has
+its own categorization.
 
 ## Schedule & failure handling
 
