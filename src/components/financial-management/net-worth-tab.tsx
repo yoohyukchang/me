@@ -143,11 +143,6 @@ export default function NetWorthTab({ dataVersion }: { dataVersion: number }) {
                 <span className="mt-1 block text-xs tabular-nums text-gray-500">
                   {money(convert(entry.total, entry, currency), currency)}
                 </span>
-                {entry.fxRateUsdKrw > 0 && (
-                  <span className="mt-0.5 block text-[10px] tabular-nums text-gray-400">
-                    $1 = {formatRate(entry.fxRateUsdKrw)}
-                  </span>
-                )}
               </button>
             ))}
           </div>
