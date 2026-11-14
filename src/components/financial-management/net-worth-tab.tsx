@@ -17,6 +17,10 @@ function convert(amount: number, entry: NetWorthEntry, currency: Currency) {
   return amount * entry.fxRateUsdKrw;
 }
 
+function formatRate(rate: number) {
+  return `₩${rate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 export default function NetWorthTab({ dataVersion }: { dataVersion: number }) {
   const [entries, setEntries] = useState<NetWorthEntry[]>([]);
   const [currency, setCurrency] = useState<Currency>("USD");
@@ -139,6 +143,11 @@ export default function NetWorthTab({ dataVersion }: { dataVersion: number }) {
                 <span className="mt-1 block text-xs tabular-nums text-gray-500">
                   {money(convert(entry.total, entry, currency), currency)}
                 </span>
+                {entry.fxRateUsdKrw > 0 && (
+                  <span className="mt-0.5 block text-[10px] tabular-nums text-gray-400">
+                    $1 = {formatRate(entry.fxRateUsdKrw)}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -153,6 +162,11 @@ export default function NetWorthTab({ dataVersion }: { dataVersion: number }) {
               {money(convert(selected.total, selected, currency), currency)}{" "}
               <span className="text-sm font-normal tracking-normal text-gray-400">{currency}</span>
             </p>
+            {selected.fxRateUsdKrw > 0 && (
+              <p className="mt-1.5 text-xs tabular-nums text-gray-400">
+                Exchange rate that day: $1 = {formatRate(selected.fxRateUsdKrw)}
+              </p>
+            )}
           </div>
 
           <div className="p-5 md:p-7">
