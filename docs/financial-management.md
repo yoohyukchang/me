@@ -398,7 +398,11 @@ netted account total.
   because contributions were lumped on one date. Contributions now carry
   real dates (see above), so it can be revisited.
 - RSU vest detection hasn't been observed working against real data yet
-  (see the 4441 row above).
+  (see the 4441 row above). When the next vest lands, check that it shows up
+  as a `transfer`/`transfer` transaction on the RSU account and moves
+  `vestedSharesByAccount` off zero, and that selling vested shares and
+  moving the cash to the brokerage account doesn't get imported as a new
+  contribution.
 
 ## External references
 
