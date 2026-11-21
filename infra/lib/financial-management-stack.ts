@@ -154,24 +154,33 @@ export class FinancialManagementStack extends cdk.Stack {
 
     // EventBridge Scheduler (not a plain cron Rule) for its native retry
     // policy + DLQ — "retry until it succeeds" needs that, a Rule doesn't
-    // have it. Saturday 13:00 UTC: safely after Friday close + settlement.
+    // have it. Saturday 13:00 UTC: safely after Friday close + settlement —
+    // the weekly run refreshes holdings and records History/Net Worth; the
+    // other six days only refresh holdings.
     const schedulerRole = new iam.Role(this, "SchedulerRole", {
       assumedBy: new iam.ServicePrincipal("scheduler.amazonaws.com"),
     });
     syncFunction.grantInvoke(schedulerRole);
 
-    new scheduler.CfnSchedule(this, "WeeklySyncSchedule", {
-      name: "financial-management-weekly-sync",
-      scheduleExpression: "cron(0 13 ? * SAT *)",
-      scheduleExpressionTimezone: "UTC",
-      flexibleTimeWindow: { mode: "OFF" },
-      target: {
-        arn: syncFunction.functionArn,
-        roleArn: schedulerRole.roleArn,
-        retryPolicy: { maximumRetryAttempts: 10, maximumEventAgeInSeconds: 86400 },
-        deadLetterConfig: { arn: dlq.queueArn },
-      },
-    });
+    const schedules = [
+      { id: "WeeklySyncSchedule", name: "financial-management-weekly-sync", cron: "cron(0 13 ? * SAT *)", mode: "weekly" },
+      { id: "DailyHoldingsSchedule", name: "financial-management-daily-holdings", cron: "cron(0 13 ? * SUN-FRI *)", mode: "daily" },
+    ];
+    for (const s of schedules) {
+      new scheduler.CfnSchedule(this, s.id, {
+        name: s.name,
+        scheduleExpression: s.cron,
+        scheduleExpressionTimezone: "UTC",
+        flexibleTimeWindow: { mode: "OFF" },
+        target: {
+          arn: syncFunction.functionArn,
+          roleArn: schedulerRole.roleArn,
+          input: JSON.stringify({ mode: s.mode }),
+          retryPolicy: { maximumRetryAttempts: 10, maximumEventAgeInSeconds: 86400 },
+          deadLetterConfig: { arn: dlq.queueArn },
+        },
+      });
+    }
     dlq.grantSendMessages(schedulerRole);
 
     // Scoped-down IAM user for the Next.js app (running on Vercel). It runs

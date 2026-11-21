@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runFullSync } from "@/lib/financial-management/integrator/sync";
 import {
   createManualHolding,
   listManualHoldings,
@@ -40,6 +39,5 @@ export async function POST(request: NextRequest) {
     currency: body.currency,
     order: existing.length,
   });
-  await runFullSync();
   return NextResponse.json({ holding }, { status: 201 });
 }

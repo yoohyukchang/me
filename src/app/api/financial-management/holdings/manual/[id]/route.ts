@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runFullSync } from "@/lib/financial-management/integrator/sync";
 import { deleteManualHolding, updateManualHolding } from "@/lib/financial-management/store/manual-holdings";
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -45,13 +44,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 
   await updateManualHolding(id, update);
-  await runFullSync();
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   await deleteManualHolding(id);
-  await runFullSync();
   return NextResponse.json({ ok: true });
 }

@@ -35,6 +35,7 @@ export function reconcileCashHoldings(
         quantity: residual,
         institutionPrice: 1,
         institutionValue: residual,
+        institutionPriceAsOf: null,
         vestedQuantity: null,
         vestedValue: null,
       });

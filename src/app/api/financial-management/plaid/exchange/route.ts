@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runFullSync } from "@/lib/financial-management/integrator/sync";
+import { syncAllItems } from "@/lib/financial-management/integrator/sync";
 import { exchangePublicToken, getInstitution } from "@/lib/financial-management/providers/plaid/link";
 import { createPlaidItem } from "@/lib/financial-management/store/plaid-items";
 
@@ -23,9 +23,9 @@ export async function POST(request: NextRequest) {
     accessToken,
   });
 
-  // Populate immediately rather than waiting for Saturday's scheduled run —
-  // the full run also refreshes Portfolio History / Net Worth snapshots.
-  await runFullSync();
+  // Populate holdings/balances immediately; History and Net Worth snapshots
+  // are only ever recorded by the Saturday run.
+  await syncAllItems();
 
   return NextResponse.json({ ok: true, institutionName }, { status: 201 });
 }

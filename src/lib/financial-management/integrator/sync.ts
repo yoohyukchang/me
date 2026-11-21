@@ -8,7 +8,7 @@ import * as manualHoldingsStore from "../store/manual-holdings";
 import * as netWorthStore from "../store/net-worth";
 import * as plaidItemsStore from "../store/plaid-items";
 import * as portfolioHistoryStore from "../store/portfolio-history";
-import { classifyAccountKind, type PlaidItem } from "../types";
+import { classifyAccountKind, type HoldingsSnapshot, type PlaidItem } from "../types";
 import { reconcileVestedShares } from "./vesting";
 
 function todayISO(): string {
@@ -84,15 +84,48 @@ export async function syncItem(item: PlaidItem): Promise<void> {
   }
 }
 
-/**
- * Runs every linked item, then derives this run's Portfolio History and Net
- * Worth snapshots from whatever synced successfully. The Lambda calls this
- * on the weekly schedule; the post-link exchange route calls it once inline
- * so a brand-new connection is populated immediately.
- */
-export async function runFullSync(): Promise<void> {
+/** Syncs every linked item without recording any History/Net Worth snapshot. */
+export async function syncAllItems(): Promise<void> {
   const items = await plaidItemsStore.listPlaidItems();
   await Promise.all(items.map(syncItem));
+}
+
+/** The daily run: refreshes the Portfolio Holdings snapshot only. */
+export async function refreshInvestmentHoldings(): Promise<void> {
+  const items = await plaidItemsStore.listPlaidItems();
+  await Promise.all(items.filter((item) => item.product === "investments").map(syncItem));
+}
+
+/**
+ * Live value of an investment Item's accounts, as the institution reports it
+ * right now. Stock-plan accounts are scaled down to their vested share using
+ * the ratio the just-synced holdings snapshot applied, since the live balance
+ * includes unvested shares.
+ */
+async function liveInvestmentValue(item: PlaidItem, snapshot: HoldingsSnapshot | undefined): Promise<number> {
+  const balances = await plaidBalanceProvider.fetchAccountBalances(item.accessToken);
+  let total = 0;
+  for (const balance of balances) {
+    if (classifyAccountKind(balance.subtype, balance.name) !== "stock_plan") {
+      total += balance.current;
+      continue;
+    }
+    const accountHoldings = snapshot?.holdings.filter((h) => h.accountId === balance.accountId) ?? [];
+    const fullValue = accountHoldings.reduce((sum, h) => sum + h.quantity * h.institutionPrice, 0);
+    const countedValue = accountHoldings.reduce((sum, h) => sum + h.institutionValue, 0);
+    total += fullValue > 0 ? balance.current * (countedValue / fullValue) : balance.current;
+  }
+  return total;
+}
+
+/**
+ * The Saturday run: syncs every item, then records this week's Portfolio
+ * History and Net Worth snapshots from live institution balances (not the
+ * holdings snapshot, whose prices can lag a day). The only writer of either
+ * table.
+ */
+export async function runWeeklySnapshot(): Promise<void> {
+  await syncAllItems();
 
   const refreshed = await plaidItemsStore.listPlaidItems();
   const activeTransferItems = refreshed.filter(
@@ -118,7 +151,11 @@ export async function runFullSync(): Promise<void> {
 
   const manualHoldings = await manualHoldingsStore.listManualHoldings();
   const fxRateUsdKrw = await getUsdKrwRate().catch(() => 0);
-  const fidelityValue = (await holdingsStore.getCurrentHoldings())?.totalValue ?? 0;
+  const snapshot = await holdingsStore.getCurrentHoldings();
+  const investmentItems = refreshed.filter((item) => item.product === "investments" && item.status === "active");
+  const fidelityValue = (
+    await Promise.all(investmentItems.map((item) => liveInvestmentValue(item, snapshot)))
+  ).reduce((sum, v) => sum + v, 0);
   const { totalValueUsd: manualHoldingsValue } = toUnifiedHoldings(null, manualHoldings, fxRateUsdKrw);
   const portfolioValue = fidelityValue + manualHoldingsValue;
 

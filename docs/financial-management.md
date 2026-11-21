@@ -1,8 +1,9 @@
 # Financial Management
 
 `/financial-management` is a password-gated personal page. Chase, Bank of
-America, and Fidelity are linked via Plaid; an AWS Lambda on a weekly
-schedule pulls fresh data and writes it to DynamoDB. The page itself never
+America, and Fidelity are linked via Plaid; an AWS Lambda refreshes
+holdings daily and records the weekly History/Net Worth snapshots every
+Saturday, writing to DynamoDB. The page itself never
 calls Plaid directly and has no manual "sync" button. Two things stay
 intentionally manual, by design: categorizing holdings (a judgment call
 Plaid can't make), and tracking contributions and any holding outside the
@@ -22,7 +23,8 @@ src/lib/financial-management/
   providers/types.ts     HoldingsProvider / VestingProvider / BalanceProvider
                          — the only contracts the Integrator depends on
   providers/plaid/       Plaid's implementation of those contracts
-  integrator/sync.ts     syncItem() / runFullSync() — the only thing that
+  integrator/sync.ts     syncItem() / refreshInvestmentHoldings() /
+                         runWeeklySnapshot() — the only thing that
                          orchestrates providers and writes the stored snapshots
   integrator/vesting.ts  pure ledger-reconciliation for vested share tracking
   store/                 one file per DynamoDB table, no business logic
@@ -32,9 +34,10 @@ infra/lib/financial-management-stack.ts  tables, Lambda, EventBridge Scheduler
 ```
 
 The Lambda and the Next.js API routes both call into `integrator/sync.ts` —
-the Lambda on the weekly schedule, the API routes once inline right after a
-new Plaid Item is linked or a manual holding changes (so the page reflects
-reality immediately, not next Saturday). Nothing outside `providers/plaid/`
+the Lambda on its daily/weekly schedules, the API routes once inline right
+after a Plaid Item is linked or reconnected (`syncAllItems()`, so the page
+reflects it immediately). Only the Saturday run (`runWeeklySnapshot()`)
+ever writes Portfolio History or Net Worth, so both stay strictly weekly. Nothing outside `providers/plaid/`
 talks to the `plaid` SDK.
 
 **Adding a data source later** (a Korean brokerage, another bank):
@@ -52,7 +55,7 @@ folder and add a case in `integrator/sync.ts`. Everything above that layer
 | `FinancialHoldingsViews` | `id` | Named groupings of holdings ("By Category", or whatever you add). |
 | `FinancialHoldingsViewCategories` | `viewId`, `id` | Categories, scoped per view. |
 | `FinancialHoldingsAssignments` | `viewId`, `holdingKey` | Which category a holding sits in, per view. No row = Uncategorized, computed at read time. |
-| `FinancialHoldingsCurrent` | fixed `"current"` | Latest Fidelity accounts/holdings/securities blob, overwritten weekly. |
+| `FinancialHoldingsCurrent` | fixed `"current"` | Latest Fidelity accounts/holdings/securities blob, overwritten daily. |
 | `FinancialManualHoldings` | `id` | Holdings maintained by hand — any account Plaid can't reach, in whichever currency it's actually held in. |
 | `FinancialContributions` | `id` | The contribution ledger — money moved into the portfolio from outside it, by hand, with the exchange rate locked at entry time. |
 | `FinancialPortfolioHistory` | `date` | Immutable weekly snapshot of Portfolio Value only (Plaid holdings + manual holdings, combined). Net contribution is derived, not stored — see below. |
@@ -144,9 +147,9 @@ Contribution comparisons). Categorization (Views/Categories/Assignments)
 works identically regardless of source — a manual holding's `id` is just
 another `holdingKey`.
 
-Unlike Plaid holdings, manual ones have no weekly sync to wait for:
-creating, editing, or deleting one triggers `runFullSync()` inline so
-Portfolio Value reflects it immediately. Net Worth does not include manual
+Manual holdings need no sync at all: the Portfolio Holdings tab merges
+them with the Plaid snapshot at read time, so an edit shows immediately.
+They enter Portfolio History at the next Saturday snapshot. Net Worth does not include manual
 holdings — it stays Chase + BOA + Fidelity only.
 
 ## Views
@@ -172,8 +175,10 @@ its own categorization.
 ## Schedule & failure handling
 
 EventBridge Scheduler (not a plain cron Rule — it has a native retry
-policy) invokes `financial-management-sync` every Saturday 13:00 UTC,
-safely after Friday's close and settlement. Failed invocations retry up to
+policy) invokes `financial-management-sync` at 13:00 UTC every day: with
+`{"mode":"daily"}` Sunday–Friday (refresh the holdings snapshot only), and
+with `{"mode":"weekly"}` on Saturday, safely after Friday's close and
+settlement (sync every Item, then record Portfolio History and Net Worth). Failed invocations retry up to
 10 times over the next 24 hours; if every retry is exhausted, the event
 lands in the `FinancialManagementSyncDLQ` SQS queue instead of vanishing
 silently. A single broken Plaid Item (`ITEM_LOGIN_REQUIRED`) doesn't block
@@ -190,7 +195,21 @@ investment-transactions extraction. `plaid/webhook/route.ts` resyncs the
 specific Item on `HOLDINGS`/`INVESTMENTS_TRANSACTIONS` `DEFAULT_UPDATE` or
 `HISTORICAL_UPDATE` webhooks (`classifyItemWebhook`'s `data_ready`
 outcome), so this closes itself out within minutes of linking instead of
-sitting empty until the next Saturday.
+sitting empty until the next Saturday. That resync only runs while the
+stored holdings snapshot is still empty — Plaid sends these webhooks on
+every daily refresh, and once holdings exist they should only change on
+the scheduled runs.
+
+**The weekly snapshot uses live balances, not holdings prices.**
+`/investments/holdings/get` returns Plaid's cached daily extraction, and
+its prices can lag the institution by a day — confirmed against a real
+account, where it overstated Fidelity by ~$4.4k versus Fidelity's own
+total. So `runWeeklySnapshot()` values each investment account at
+`/accounts/balance/get`'s live `current` instead (billed per call, so only
+once a week). A stock-plan account's live balance includes unvested
+shares, so it's scaled by the counted/full value ratio the holdings sync
+applied. The Portfolio Holdings tab keeps the cached prices and shows
+their "Prices as of" date.
 
 ## Secrets
 

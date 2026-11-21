@@ -101,6 +101,7 @@ export interface Holding {
   quantity: number;
   institutionPrice: number;
   institutionValue: number;
+  institutionPriceAsOf: string | null;
   vestedQuantity: number | null;
   vestedValue: number | null;
 }

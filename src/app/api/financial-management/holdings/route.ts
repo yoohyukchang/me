@@ -15,8 +15,15 @@ export async function GET() {
 
   const { holdings, totalValueUsd } = toUnifiedHoldings(snapshot ?? null, manualHoldings, usdKrwRate);
 
+  const pricesAsOf =
+    snapshot?.holdings
+      .map((h) => h.institutionPriceAsOf)
+      .filter((d): d is string => !!d)
+      .sort()
+      .at(-1) ?? null;
+
   return NextResponse.json(
-    { holdings, totalValueUsd, lastSyncedAt: snapshot?.lastSyncedAt ?? null },
+    { holdings, totalValueUsd, lastSyncedAt: snapshot?.lastSyncedAt ?? null, pricesAsOf },
     { headers: { "Cache-Control": "no-store" } }
   );
 }

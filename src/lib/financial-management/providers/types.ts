@@ -27,7 +27,15 @@ export interface VestingProvider {
   ): Promise<VestedSharesResult>;
 }
 
-/** Contract for a depository (bank) connection — just its current balance, for Net Worth. */
+export interface AccountBalance {
+  accountId: string;
+  name: string;
+  subtype: string | null;
+  current: number;
+}
+
+/** Contract for live, institution-reported balances — Net Worth and the weekly snapshots. */
 export interface BalanceProvider {
   fetchBalance(accessToken: string): Promise<number>;
+  fetchAccountBalances(accessToken: string): Promise<AccountBalance[]>;
 }

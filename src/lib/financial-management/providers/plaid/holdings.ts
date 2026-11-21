@@ -28,6 +28,7 @@ export const plaidHoldingsProvider: HoldingsProvider = {
       quantity: holding.quantity,
       institutionPrice: holding.institution_price,
       institutionValue: holding.institution_value,
+      institutionPriceAsOf: holding.institution_price_as_of ?? null,
       vestedQuantity: holding.vested_quantity ?? null,
       vestedValue: holding.vested_value ?? null,
     }));
