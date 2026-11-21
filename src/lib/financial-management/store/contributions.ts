@@ -20,6 +20,33 @@ export async function createContribution(input: {
   return entry;
 }
 
+/** Imported entries use a deterministic id, so re-importing the same account-day overwrites instead of duplicating. */
+export function plaidContributionId(accountId: string, date: string): string {
+  return `plaid-${accountId}-${date}`;
+}
+
+export function isPlaidContributionId(id: string): boolean {
+  return id.startsWith("plaid-");
+}
+
+export async function upsertPlaidContribution(input: {
+  accountId: string;
+  date: string;
+  amount: number;
+  note: string;
+}): Promise<void> {
+  const entry: ContributionEntry = {
+    id: plaidContributionId(input.accountId, input.date),
+    date: input.date,
+    amount: input.amount,
+    currency: "USD",
+    rate: 1,
+    note: input.note,
+    source: "plaid",
+  };
+  await docClient.send(new PutCommand({ TableName: CONTRIBUTIONS_TABLE, Item: entry }));
+}
+
 export async function updateContribution(
   id: string,
   input: Partial<Pick<ContributionEntry, "date" | "amount" | "currency" | "rate" | "note">>

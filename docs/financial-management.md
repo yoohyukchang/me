@@ -18,11 +18,17 @@ src/lib/financial-management/
                          and classifyAccountKind()
   holdings-view.ts       toUnifiedHoldings() — merges Plaid's holdings with
                          manually-entered ones into one provider-agnostic list
-  portfolio-history.ts   computeHistoryRows() — combines weekly Portfolio
-                         Value snapshots with the contribution ledger
-  providers/types.ts     HoldingsProvider / VestingProvider / BalanceProvider
-                         — the only contracts the Integrator depends on
+  portfolio-history.ts   computeHistoryRows() / benchmarkValueOn() — combines
+                         weekly Portfolio Value snapshots with the contribution
+                         ledger and the S&P 500 comparison
+  time-filter.ts         applyTimeFilter() — Week/Month + range presets shared
+                         by the History and Net Worth charts
+  net-worth-buckets.ts   institution → purpose caption, fixed colors/order
+  providers/types.ts     HoldingsProvider / InvestmentActivityProvider /
+                         BalanceProvider / BenchmarkProvider — the only
+                         contracts the Integrator depends on
   providers/plaid/       Plaid's implementation of those contracts
+  providers/yahoo/       benchmark daily closes (S&P 500 Total Return)
   integrator/sync.ts     syncItem() / refreshInvestmentHoldings() /
                          runWeeklySnapshot() — the only thing that
                          orchestrates providers and writes the stored snapshots
@@ -57,7 +63,8 @@ folder and add a case in `integrator/sync.ts`. Everything above that layer
 | `FinancialHoldingsAssignments` | `viewId`, `holdingKey` | Which category a holding sits in, per view. No row = Uncategorized, computed at read time. |
 | `FinancialHoldingsCurrent` | fixed `"current"` | Latest Fidelity accounts/holdings/securities blob, overwritten daily. |
 | `FinancialManualHoldings` | `id` | Holdings maintained by hand — any account Plaid can't reach, in whichever currency it's actually held in. |
-| `FinancialContributions` | `id` | The contribution ledger — money moved into the portfolio from outside it, by hand, with the exchange rate locked at entry time. |
+| `FinancialContributions` | `id` | The contribution ledger — money moved into the portfolio from outside it. Plaid-imported rows (`source: "plaid"`, id `plaid-<accountId>-<date>`, read-only) plus manual rows (UUID id, exchange rate locked at entry time). |
+| `FinancialBenchmarkPrices` | `symbol`, `date` | Daily closes of the benchmark index (`^SP500TR`), appended by the Saturday run. |
 | `FinancialPortfolioHistory` | `date` | Weekly (Saturday) snapshot of Portfolio Value only (live Fidelity balances + manual holdings). Net contribution is derived, not stored — see below. Plain `Put`: a re-run on the same date overwrites that row. |
 | `FinancialNetWorth` | `date` | Weekly (Saturday) snapshot: per-institution depository balances, live Fidelity value, total, USD→KRW rate at that time. Same overwrite-on-rerun semantics. |
 
@@ -126,13 +133,27 @@ is the reliable signal.
 ## Contributions
 
 Net Contribution — money moved into the portfolio from outside it, as
-opposed to market growth — is tracked by hand in `FinancialContributions`,
-not inferred from transaction data. Each entry has a date, an amount, a
-currency, and the exchange rate locked in at entry time (1 for USD). This
-covers every funding path uniformly: a bank transfer to Fidelity, a 401k
-contribution, an RSU grant you choose to count the moment it vests, a
-deposit into a Korean brokerage account — all the same kind of entry,
-regardless of currency or which account received it.
+opposed to market growth — lives in `FinancialContributions`. Each entry
+has a date, an amount, a currency, and the exchange rate locked in at entry
+time (1 for USD). Two sources feed it:
+
+- **Imported from Plaid, automatically.** Every `syncItem` run on the
+  Fidelity Item reads `/investments/transactions/get` once
+  (`providers/plaid/investment-activity.ts`) and, besides vests, sums
+  `cash` transactions of subtype `deposit`/`withdrawal`/`contribution` per
+  account per day on every non-stock-plan account (brokerage EFTs, 401(k)
+  payroll contributions incl. match). Each account-day is upserted under the
+  deterministic id `plaid-<accountId>-<date>`, so re-reading the trailing
+  14-day window (Plaid posts late) overwrites instead of duplicating. Days
+  netting to zero (Fidelity's account-verification micro-deposits) are
+  dropped. These rows are read-only: the UI shows "Auto · Plaid" and the
+  PATCH/DELETE route rejects `plaid-` ids.
+- **By hand**, for anything Plaid can't see — a Korean brokerage deposit,
+  for instance. Don't hand-enter a Fidelity deposit; it'd be counted twice.
+
+To re-import history from scratch (e.g. after changing the import rule):
+set the Fidelity item's `investmentTransactionsSince` to null and run the
+Lambda; the next sync reads 24 months.
 
 Net Contribution *as of a given date* — the figure Portfolio History shows
 — is the running total of every contribution entry dated on or before it,
@@ -143,6 +164,32 @@ Profit and Return, instead of requiring historical snapshots to be
 rewritten. `FinancialPortfolioHistory` only ever stores the one thing that
 genuinely can't be reconstructed after the fact — what Portfolio Value
 actually was on a given date.
+
+## S&P 500 comparison (Portfolio History chart)
+
+The Portfolio History tab charts Portfolio Value against a counterfactual:
+*the same contributions, invested in the S&P 500 instead*.
+`benchmarkValueOn(date, contributions, prices)` buys index units with every
+contribution dated on or before `date` at that contribution's close (the
+last close on or before it — a weekend deposit can't trade earlier),
+sells units for a negative contribution, and values the units at `date`'s
+close. It's derived at read time like Net Contribution, so editing or
+backdating a contribution re-prices the whole line.
+
+The index is the S&P 500 **Total Return** (`^SP500TR`, dividends
+reinvested — like holding VOO with dividend reinvestment), since the
+portfolio collects dividends too. The source is Yahoo Finance's public
+chart endpoint (`providers/yahoo/benchmark.ts`): unofficial, but the only
+free, keyless source of that index current through the latest close (FRED
+has only the price index, a day late; Stooq blocks non-browser clients).
+`refreshBenchmarkPrices()` runs last in the Saturday job, fetching from a
+week before the latest stored close, or from two weeks before the earliest
+contribution when nothing is stored yet. Closes already stored survive any
+Yahoo outage.
+
+Both charts (Portfolio History, Net Worth) share `TimeFilterControls`:
+Week (every snapshot) or Month (last snapshot of each month), and a range
+— 3M / 6M / YTD / 1Y / All / Custom from–to.
 
 ## Manual holdings
 
@@ -160,6 +207,19 @@ Manual holdings need no sync at all: the Portfolio Holdings tab merges
 them with the Plaid snapshot at read time, so an edit shows immediately.
 They enter Portfolio History at the next Saturday snapshot. Net Worth does not include manual
 holdings — it stays Chase + BOA + Fidelity only.
+
+## Net Worth tab
+
+Each institution holds money for a different purpose — Bank of America for
+living expenses, Chase for leisure & travel savings, Fidelity for
+investing. Institutions are always the primary label; the purpose is a
+secondary caption under the name. That mapping (and the fixed color/stack
+order) lives in `net-worth-buckets.ts`; an institution not listed there (a
+new bank, a second Chase connection) still shows, with no caption, after
+the known ones. The tab shows, for the selected snapshot, a donut plus a
+table of account, balance, and share; below it, a history chart of stacked
+bars per institution (dollar amounts) with the total as a line. Clicking a
+bar selects that snapshot.
 
 ## Views
 
@@ -320,6 +380,12 @@ only for their balances in Net Worth.
   thousand dollars. They're intentionally kept; there's no way to recover
   the live balance for a past date.
 
+**Contributions:** 11 real-dated rows imported from Plaid on 2026-11-21
+(Fidelity …0094: 7 deposits/withdrawals, net $94,950 from 2025-10-15;
+401(k): 4 monthly contributions from 2026-08-04, $2,495.86), total
+$97,445.86. They replaced two hand-entered rows dated 2026-11-09 ($94,000
+and $2,495.86) that lumped everything on the link date.
+
 **Settlement timing, for reference:** Fidelity books a trade on trade date
 and moves SPAXX on settlement (T+1), so SPAXX alone overstates cash between
 the two. The app is unaffected because it derives cash as
@@ -329,8 +395,8 @@ netted account total.
 ## Open items
 
 - XIRR on Portfolio History is deferred: a test calculation gave 445%
-  because contributions were lumped on a few dates. Revisit once
-  contributions carry real dates.
+  because contributions were lumped on one date. Contributions now carry
+  real dates (see above), so it can be revisited.
 - RSU vest detection hasn't been observed working against real data yet
   (see the 4441 row above).
 
@@ -341,5 +407,6 @@ netted account total.
 - Plaid Balance (`/accounts/balance/get`): https://plaid.com/docs/api/products/balance/
 - Plaid webhooks and verification: https://plaid.com/docs/api/webhooks/ , https://plaid.com/docs/api/webhooks/webhook-verification/
 - Fidelity balance definitions (core vs. cash available to trade/withdraw): https://fidelity.com/products/stocksbonds/content/cash-available-to-trade.shtml , https://www.fidelity.com/trading/faqs-about-account
+- Yahoo chart endpoint used for ^SP500TR (unofficial, undocumented): `https://query1.finance.yahoo.com/v8/finance/chart/%5ESP500TR?period1=<unix>&period2=<unix>&interval=1d`
 - EventBridge Scheduler cron syntax: https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html
 

@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteContribution, updateContribution } from "@/lib/financial-management/store/contributions";
+import {
+  deleteContribution,
+  isPlaidContributionId,
+  updateContribution,
+} from "@/lib/financial-management/store/contributions";
 import { validDate } from "@/lib/financial-management/types";
+
+function readOnly() {
+  return NextResponse.json({ error: "Contributions imported from Plaid are read-only" }, { status: 400 });
+}
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  if (isPlaidContributionId(id)) return readOnly();
   const body = await request.json().catch(() => null);
   const update: Record<string, unknown> = {};
 
@@ -39,6 +48,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  if (isPlaidContributionId(id)) return readOnly();
   await deleteContribution(id);
   return NextResponse.json({ ok: true });
 }

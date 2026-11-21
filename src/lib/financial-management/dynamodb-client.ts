@@ -41,3 +41,5 @@ export const MANUAL_HOLDINGS_TABLE =
   process.env.FINANCIAL_MANAGEMENT_MANUAL_HOLDINGS_TABLE || "FinancialManualHoldings";
 export const CONTRIBUTIONS_TABLE =
   process.env.FINANCIAL_MANAGEMENT_CONTRIBUTIONS_TABLE || "FinancialContributions";
+export const BENCHMARK_PRICES_TABLE =
+  process.env.FINANCIAL_MANAGEMENT_BENCHMARK_PRICES_TABLE || "FinancialBenchmarkPrices";

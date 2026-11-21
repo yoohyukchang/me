@@ -103,6 +103,14 @@ export class FinancialManagementStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
+    const benchmarkPricesTable = new dynamodb.Table(this, "BenchmarkPricesTable", {
+      tableName: "FinancialBenchmarkPrices",
+      partitionKey: { name: "symbol", type: dynamodb.AttributeType.STRING },
+      sortKey: { name: "date", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
     const tables = [
       plaidItemsTable,
       viewsTable,
@@ -113,11 +121,8 @@ export class FinancialManagementStack extends cdk.Stack {
       netWorthTable,
       manualHoldingsTable,
       contributionsTable,
+      benchmarkPricesTable,
     ];
-    // The Lambda's weekly sync folds manual holdings into Portfolio Value,
-    // but never touches Contributions — that ledger is only read (and
-    // combined with Portfolio Value) at request time by the API routes.
-    const lambdaTables = tables.filter((t) => t !== contributionsTable);
 
     const dlq = new sqs.Queue(this, "SyncDeadLetterQueue", {
       queueName: "FinancialManagementSyncDLQ",
@@ -143,13 +148,15 @@ export class FinancialManagementStack extends cdk.Stack {
         FINANCIAL_MANAGEMENT_PORTFOLIO_HISTORY_TABLE: portfolioHistoryTable.tableName,
         FINANCIAL_MANAGEMENT_NET_WORTH_TABLE: netWorthTable.tableName,
         FINANCIAL_MANAGEMENT_MANUAL_HOLDINGS_TABLE: manualHoldingsTable.tableName,
+        FINANCIAL_MANAGEMENT_CONTRIBUTIONS_TABLE: contributionsTable.tableName,
+        FINANCIAL_MANAGEMENT_BENCHMARK_PRICES_TABLE: benchmarkPricesTable.tableName,
         PLAID_CLIENT_ID: requiredEnv("PLAID_CLIENT_ID"),
         PLAID_SECRET: requiredEnv("PLAID_SECRET"),
         PLAID_ENV: process.env.PLAID_ENV || "production",
       },
     });
 
-    for (const table of lambdaTables) table.grantReadWriteData(syncFunction);
+    for (const table of tables) table.grantReadWriteData(syncFunction);
     plaidItemsKey.grantEncryptDecrypt(syncFunction);
 
     // EventBridge Scheduler (not a plain cron Rule) for its native retry

@@ -189,6 +189,17 @@ export interface ContributionEntry {
   /** Won per $1 at entry time. 1 for USD entries. */
   rate: number;
   note: string;
+  /** "plaid" when imported automatically from an investment account's cash flows; such entries are read-only. */
+  source?: "plaid";
+}
+
+/** S&P 500 Total Return: dividends reinvested, like holding VOO with DRIP. */
+export const BENCHMARK_SYMBOL = "^SP500TR";
+
+export interface BenchmarkPrice {
+  symbol: string;
+  date: string;
+  close: number;
 }
 
 export interface NetWorthEntry {

@@ -13,18 +13,25 @@ export interface HoldingsProvider {
   }>;
 }
 
-export interface VestedSharesResult {
+export interface InvestmentActivityResult {
   lastDate: string;
   vestUpserts: Array<{ transactionId: string; accountId: string; quantity: number }>;
+  /** Net external cash in (+) or out (−) per account per day — deposits, withdrawals, 401(k) contributions. */
+  cashFlows: Array<{ accountId: string; date: string; amount: number }>;
 }
 
-/** Contract for watching a stock-plan account's vest events. */
-export interface VestingProvider {
-  fetchVestedShares(
+/** Contract for an investment account's activity feed: vest events and external cash flows. */
+export interface InvestmentActivityProvider {
+  fetchActivity(
     accessToken: string,
     accounts: Account[],
     sinceDate: string | null
-  ): Promise<VestedSharesResult>;
+  ): Promise<InvestmentActivityResult>;
+}
+
+/** Contract for a benchmark index's daily closes. */
+export interface BenchmarkProvider {
+  fetchDailyCloses(symbol: string, fromDate: string): Promise<Array<{ date: string; close: number }>>;
 }
 
 export interface AccountBalance {

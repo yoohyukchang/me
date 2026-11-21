@@ -2,17 +2,26 @@ import { getUsdKrwRate } from "../fx";
 import { toUnifiedHoldings } from "../holdings-view";
 import { plaidHoldingsProvider } from "../providers/plaid/holdings";
 import { plaidBalanceProvider } from "../providers/plaid/transfers";
-import { plaidVestingProvider } from "../providers/plaid/vesting";
+import { plaidInvestmentActivityProvider } from "../providers/plaid/investment-activity";
+import { yahooBenchmarkProvider } from "../providers/yahoo/benchmark";
+import * as benchmarkStore from "../store/benchmark-prices";
+import * as contributionsStore from "../store/contributions";
 import * as holdingsStore from "../store/holdings";
 import * as manualHoldingsStore from "../store/manual-holdings";
 import * as netWorthStore from "../store/net-worth";
 import * as plaidItemsStore from "../store/plaid-items";
 import * as portfolioHistoryStore from "../store/portfolio-history";
-import { classifyAccountKind, type HoldingsSnapshot, type PlaidItem } from "../types";
+import { BENCHMARK_SYMBOL, classifyAccountKind, type HoldingsSnapshot, type PlaidItem } from "../types";
 import { reconcileVestedShares } from "./vesting";
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+function shiftDays(date: string, days: number): string {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
 }
 
 /**
@@ -31,14 +40,14 @@ export async function syncItem(item: PlaidItem): Promise<void> {
       // RSU vests never touch a bank, and Plaid/Fidelity reports no
       // vested-vs-unvested split for a stock-plan account, so this is the
       // only way Portfolio Value counts just the vested portion of a grant.
-      const vestedResult = await plaidVestingProvider.fetchVestedShares(
+      const activity = await plaidInvestmentActivityProvider.fetchActivity(
         item.accessToken,
         accounts,
         item.investmentTransactionsSince
       );
       const { deltasByAccount, ledger: vestedSharesLedger } = reconcileVestedShares(
         item.vestedSharesLedger,
-        vestedResult.vestUpserts
+        activity.vestUpserts
       );
       const vestedSharesByAccount = { ...item.vestedSharesByAccount };
       for (const [accountId, change] of Object.entries(deltasByAccount)) {
@@ -64,8 +73,18 @@ export async function syncItem(item: PlaidItem): Promise<void> {
         lastSyncedAt: new Date().toISOString(),
       });
 
+      // Deposits, withdrawals, and 401(k) contributions are the contribution
+      // ledger for these accounts; manual entries cover everything else.
+      const accountNameById = new Map(accounts.map((a) => [a.accountId, a.name]));
+      for (const flow of activity.cashFlows) {
+        await contributionsStore.upsertPlaidContribution({
+          ...flow,
+          note: accountNameById.get(flow.accountId) ?? "Fidelity",
+        });
+      }
+
       await plaidItemsStore.recordSyncSuccess(item.itemId, {
-        investmentTransactionsSince: vestedResult.lastDate,
+        investmentTransactionsSince: activity.lastDate,
         vestedSharesByAccount,
         vestedSharesLedger,
       });
@@ -116,6 +135,26 @@ async function liveInvestmentValue(item: PlaidItem, snapshot: HoldingsSnapshot |
     total += fullValue > 0 ? balance.current * (countedValue / fullValue) : balance.current;
   }
   return total;
+}
+
+/**
+ * Stores benchmark daily closes from a week before the latest stored one
+ * (overlap absorbs late corrections), or — when nothing is stored yet, or
+ * a contribution is dated before the earliest stored close — from two
+ * weeks before the earliest contribution.
+ */
+export async function refreshBenchmarkPrices(): Promise<void> {
+  const [stored, contributions] = await Promise.all([
+    benchmarkStore.listBenchmarkPrices(BENCHMARK_SYMBOL),
+    contributionsStore.listContributions(),
+  ]);
+  const earliestNeeded = shiftDays(contributions[0]?.date ?? todayISO(), -14);
+  const from =
+    stored.length > 0 && stored[0].date <= earliestNeeded
+      ? shiftDays(stored[stored.length - 1].date, -7)
+      : earliestNeeded;
+  const closes = await yahooBenchmarkProvider.fetchDailyCloses(BENCHMARK_SYMBOL, from);
+  await benchmarkStore.saveBenchmarkPrices(closes.map((c) => ({ symbol: BENCHMARK_SYMBOL, ...c })));
 }
 
 /**
@@ -170,4 +209,9 @@ export async function runWeeklySnapshot(): Promise<void> {
     total: depositoryTotal + fidelityValue,
     fxRateUsdKrw,
   });
+
+  // Last, so a benchmark-source outage can't block the snapshots; a throw
+  // here still fails the run, and the scheduler's retries re-record the
+  // same (market-closed) Saturday values before trying again.
+  await refreshBenchmarkPrices();
 }

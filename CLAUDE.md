@@ -57,6 +57,12 @@ comments, docs, and commit messages in English.
   namespaced methods (`plaidClient.investments.getHoldings`), not the
   `PlaidApi`/`Configuration` style shown in most online examples. For
   ad-hoc scripts, call the REST endpoints with `fetch`/`curl`.
+- Fidelity deposits/withdrawals and 401(k) contributions are imported into
+  `FinancialContributions` automatically (`plaid-<accountId>-<date>` ids,
+  read-only). Only non-Plaid money should ever be entered by hand.
+- The S&P 500 line uses Yahoo's unofficial chart API for `^SP500TR`. If it
+  breaks, the Saturday run fails *after* writing snapshots; stored closes
+  remain. Check `FinancialBenchmarkPrices`' latest date first.
 - The RSU account's subtype is `stock plan` in holdings but `brokerage` in
   balance responses. `classifyAccountKind` matches on the account name first
   for that reason.

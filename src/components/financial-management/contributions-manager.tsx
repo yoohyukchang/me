@@ -131,8 +131,10 @@ export default function ContributionsManager({
         )}
       </div>
       <p className="text-xs text-gray-400 mb-4">
-        Money moved into the portfolio from outside it — a bank transfer, a Korean brokerage deposit,
-        anything that isn&apos;t market growth. This is what Net Contribution and Return are measured against.
+        Money moved into the portfolio from outside it — anything that isn&apos;t market growth. Fidelity
+        deposits, withdrawals, and 401(k) contributions are imported from Plaid automatically; add anything
+        else (a Korean brokerage deposit, for example) by hand. This is what Net Contribution, Return, and
+        the S&amp;P 500 comparison are measured against.
       </p>
 
       {showForm && (
@@ -228,20 +230,26 @@ export default function ContributionsManager({
                   </td>
                   <td className="py-2.5 pr-4 text-sm text-gray-500">{entry.note}</td>
                   <td className="py-2.5 pr-3 text-right whitespace-nowrap">
-                    <button
-                      type="button"
-                      onClick={() => startEdit(entry)}
-                      className="text-xs text-gray-400 hover:text-gray-700 transition-colors mr-3"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(entry.id)}
-                      className="text-xs text-gray-400 hover:text-red-600 transition-colors"
-                    >
-                      Remove
-                    </button>
+                    {entry.source === "plaid" ? (
+                      <span className="text-xs text-gray-400">Auto · Plaid</span>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => startEdit(entry)}
+                          className="text-xs text-gray-400 hover:text-gray-700 transition-colors mr-3"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(entry.id)}
+                          className="text-xs text-gray-400 hover:text-red-600 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}

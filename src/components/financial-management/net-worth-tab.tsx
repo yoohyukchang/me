@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import NetWorthAllocation from "@/components/financial-management/net-worth-allocation";
+import NetWorthHistoryChart from "@/components/financial-management/net-worth-history-chart";
 import { apiRequest } from "@/lib/financial-management/client";
+import { bucketAmounts, bucketAmountsFor, bucketDefinitions } from "@/lib/financial-management/net-worth-buckets";
 import type { Currency, NetWorthEntry } from "@/lib/financial-management/types";
 
 function money(value: number, currency: Currency) {
@@ -49,6 +52,7 @@ export default function NetWorthTab({ dataVersion }: { dataVersion: number }) {
     () => entries.find((e) => e.date === selectedDate) ?? latest,
     [entries, selectedDate, latest]
   );
+  const definitions = useMemo(() => bucketDefinitions(entries), [entries]);
 
   if (loading || loadError) {
     return (
@@ -83,10 +87,25 @@ export default function NetWorthTab({ dataVersion }: { dataVersion: number }) {
     );
   }
 
-  const breakdown = [
-    ...Object.entries(selected.depositoryBalances).map(([name, amount]) => ({ name, amount })),
-    { name: "Fidelity", amount: selected.fidelityValue },
-  ];
+  const formatMoney = (value: number) => money(value, currency);
+  const formatCompact = (value: number) =>
+    new Intl.NumberFormat("en-US", { style: "currency", currency, notation: "compact", maximumFractionDigits: 1 }).format(
+      value
+    );
+  const inDisplayCurrency = (entry: NetWorthEntry) =>
+    Object.fromEntries(
+      Object.entries(bucketAmountsFor(entry)).map(([name, amount]) => [name, convert(amount, entry, currency)])
+    );
+
+  const selectedBuckets = bucketAmounts(definitions, selected).map((b) => ({
+    ...b,
+    amount: convert(b.amount, selected, currency),
+  }));
+  const historyPoints = entries.map((entry) => ({
+    date: entry.date,
+    amounts: inDisplayCurrency(entry),
+    total: convert(entry.total, entry, currency),
+  }));
 
   return (
     <section aria-label="Net Worth" className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -165,21 +184,22 @@ export default function NetWorthTab({ dataVersion }: { dataVersion: number }) {
           </div>
 
           <div className="p-5 md:p-7">
-            <h3 className="mb-4 text-sm font-semibold">Breakdown</h3>
-            <table className="w-full text-sm">
-              <tbody>
-                {breakdown.map((row) => (
-                  <tr key={row.name} className="border-b border-gray-100 last:border-0">
-                    <td className="py-3 font-medium">{row.name}</td>
-                    <td className="py-3 text-right tabular-nums">
-                      {money(convert(row.amount, selected, currency), currency)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <h3 className="mb-4 text-sm font-semibold">Allocation</h3>
+            <NetWorthAllocation buckets={selectedBuckets} formatMoney={formatMoney} />
           </div>
         </div>
+      </div>
+
+      <div className="border-t border-gray-200 p-5 md:p-7">
+        <h3 className="mb-4 text-sm font-semibold">History</h3>
+        <NetWorthHistoryChart
+          definitions={definitions}
+          points={historyPoints}
+          selectedDate={selected.date}
+          onSelect={setSelectedDate}
+          formatMoney={formatMoney}
+          formatCompact={formatCompact}
+        />
       </div>
     </section>
   );

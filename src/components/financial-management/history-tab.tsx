@@ -6,6 +6,7 @@ import { formatCurrency, formatPercent } from "@/lib/financial-management/format
 import type { ContributionEntry } from "@/lib/financial-management/types";
 import type { PortfolioHistoryRow } from "@/lib/financial-management/portfolio-history";
 import ContributionsManager from "./contributions-manager";
+import PortfolioHistoryChart from "./portfolio-history-chart";
 import { useToast } from "./toast";
 
 function InfoTooltip({ text }: { text: string }) {
@@ -91,52 +92,57 @@ export default function HistoryTab({ dataVersion }: { dataVersion: number }) {
             holdings) are in place on the Portfolio Holdings tab.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 text-xs text-gray-500">
-                  <th className="text-left font-medium pb-2 pr-4">Date</th>
-                  <th className="text-right font-medium pb-2 pr-4">
-                    Net Contribution
-                    <InfoTooltip text="Running total of every contribution entered below, as of this date." />
-                  </th>
-                  <th className="text-right font-medium pb-2 pr-4">
-                    Portfolio Value
-                    <InfoTooltip text="Every Fidelity account (brokerage, 401(k), vested RSU) plus any manual holdings." />
-                  </th>
-                  <th className="text-right font-medium pb-2 pr-4">Total Profit</th>
-                  <th className="text-right font-medium pb-2 pr-4">Return on Net Contribution</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={row.date} className="border-b border-gray-100 last:border-0">
-                    <td className="py-3 pr-4 text-sm text-gray-900">{row.date}</td>
-                    <td className="py-3 pr-4 text-sm text-gray-900 text-right tabular-nums">
-                      {formatCurrency(row.netContribution)}
-                    </td>
-                    <td className="py-3 pr-4 text-sm text-gray-900 text-right tabular-nums">
-                      {formatCurrency(row.portfolioValue)}
-                    </td>
-                    <td
-                      className={`py-3 pr-4 text-sm text-right tabular-nums font-medium ${
-                        row.totalProfit >= 0 ? "text-green-700" : "text-red-600"
-                      }`}
-                    >
-                      {formatCurrency(row.totalProfit)}
-                    </td>
-                    <td
-                      className={`py-3 pr-4 text-sm text-right tabular-nums ${
-                        row.returnOnNetContribution >= 0 ? "text-green-700" : "text-red-600"
-                      }`}
-                    >
-                      {formatPercent(row.returnOnNetContribution, 2)}
-                    </td>
+          <>
+            <div className="mb-8">
+              <PortfolioHistoryChart rows={rows} />
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 text-xs text-gray-500">
+                    <th className="text-left font-medium pb-2 pr-4">Date</th>
+                    <th className="text-right font-medium pb-2 pr-4">
+                      Net Contribution
+                      <InfoTooltip text="Running total of every contribution entered below, as of this date." />
+                    </th>
+                    <th className="text-right font-medium pb-2 pr-4">
+                      Portfolio Value
+                      <InfoTooltip text="Every Fidelity account (brokerage, 401(k), vested RSU) plus any manual holdings." />
+                    </th>
+                    <th className="text-right font-medium pb-2 pr-4">Total Profit</th>
+                    <th className="text-right font-medium pb-2 pr-4">Return on Net Contribution</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <tr key={row.date} className="border-b border-gray-100 last:border-0">
+                      <td className="py-3 pr-4 text-sm text-gray-900">{row.date}</td>
+                      <td className="py-3 pr-4 text-sm text-gray-900 text-right tabular-nums">
+                        {formatCurrency(row.netContribution)}
+                      </td>
+                      <td className="py-3 pr-4 text-sm text-gray-900 text-right tabular-nums">
+                        {formatCurrency(row.portfolioValue)}
+                      </td>
+                      <td
+                        className={`py-3 pr-4 text-sm text-right tabular-nums font-medium ${
+                          row.totalProfit >= 0 ? "text-green-700" : "text-red-600"
+                        }`}
+                      >
+                        {formatCurrency(row.totalProfit)}
+                      </td>
+                      <td
+                        className={`py-3 pr-4 text-sm text-right tabular-nums ${
+                          row.returnOnNetContribution >= 0 ? "text-green-700" : "text-red-600"
+                        }`}
+                      >
+                        {formatPercent(row.returnOnNetContribution, 2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
 
