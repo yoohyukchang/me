@@ -58,16 +58,25 @@ folder and add a case in `integrator/sync.ts`. Everything above that layer
 | `FinancialHoldingsCurrent` | fixed `"current"` | Latest Fidelity accounts/holdings/securities blob, overwritten daily. |
 | `FinancialManualHoldings` | `id` | Holdings maintained by hand — any account Plaid can't reach, in whichever currency it's actually held in. |
 | `FinancialContributions` | `id` | The contribution ledger — money moved into the portfolio from outside it, by hand, with the exchange rate locked at entry time. |
-| `FinancialPortfolioHistory` | `date` | Immutable weekly snapshot of Portfolio Value only (Plaid holdings + manual holdings, combined). Net contribution is derived, not stored — see below. |
-| `FinancialNetWorth` | `date` | Immutable weekly snapshot: per-institution depository balances, Fidelity value, total, USD→KRW rate at that time. |
+| `FinancialPortfolioHistory` | `date` | Weekly (Saturday) snapshot of Portfolio Value only (live Fidelity balances + manual holdings). Net contribution is derived, not stored — see below. Plain `Put`: a re-run on the same date overwrites that row. |
+| `FinancialNetWorth` | `date` | Weekly (Saturday) snapshot: per-institution depository balances, live Fidelity value, total, USD→KRW rate at that time. Same overwrite-on-rerun semantics. |
 
 ## Portfolio Value
 
-Portfolio Value is automatic, combining two sources: Fidelity's holdings
-(brokerage, 401k, RSU stock plan — all on one Plaid Item, since they share
-one fidelity.com login, so one `/investments/holdings/get` call covers all
-of them) plus whatever's in `FinancialManualHoldings`, converted to USD at
-the current rate.
+Portfolio Value is automatic, combining two sources: Fidelity (brokerage,
+401k, RSU stock plan — all on one Plaid Item, since they share one
+fidelity.com login) plus whatever's in `FinancialManualHoldings`,
+converted to USD at the current rate.
+
+Two different Plaid endpoints feed it, on purpose:
+
+| Where | Endpoint | Freshness |
+|---|---|---|
+| Portfolio Holdings tab (per-security rows, pie chart) | `/investments/holdings/get` | Plaid's cached daily extraction; prices can lag Fidelity by ~1 trading day. The tab shows "Prices as of" from `institution_price_as_of`. Not billed per call. |
+| Portfolio History / Net Worth (Saturday) | `/accounts/balance/get` → `balances.current` per account | Live from Fidelity at call time. Billed per call, so only the weekly run uses it. |
+
+So the Holdings tab total and the latest History value can differ slightly;
+History is the one that matches Fidelity's own "Total account value".
 
 ### Cash Plaid doesn't itemize
 
@@ -220,3 +229,117 @@ existing risk posture. Plaid access tokens, the one genuinely sensitive
 secret this app stores, live only in `FinancialPlaidItems`, which has its
 own customer-managed KMS key — a tier above the default encryption the
 other tables use.
+
+## Operations runbook
+
+Everything below assumes the repo root as the working directory.
+
+**AWS:** account `149536467459`, region `us-west-2`, CLI profile
+`portfolio-dev` (CDK already bootstrapped). Pass `--profile portfolio-dev
+--region us-west-2` explicitly to every `aws` call — in zsh, don't stash
+those flags in a variable like `$P`; zsh won't word-split it.
+
+**Deploying.** Two independent deploys:
+- App (Next.js on Vercel, project `me`): push to `main` on GitHub; Vercel's
+  Git integration builds production automatically. Check with
+  `vercel ls --prod` / `vercel inspect <url>`.
+- Infra (tables, Lambda, schedules): `cd infra`, export the Plaid vars, then
+  `AWS_PROFILE=portfolio-dev npx cdk deploy FinancialManagementStack`.
+  The Lambda bundles `src/lib/financial-management/**` at deploy time, so any
+  change to `integrator/`, `providers/`, or `store/` needs a CDK deploy too,
+  not just a Vercel one.
+
+  ```bash
+  set -a; source <(grep '^PLAID_' ../.env.local); set +a
+  AWS_PROFILE=portfolio-dev npx cdk deploy FinancialManagementStack
+  ```
+
+**Running the Lambda by hand.** `{"mode":"daily"}` only rewrites
+`FinancialHoldingsCurrent` (safe any time); `{"mode":"weekly"}` also writes
+today's History/Net Worth rows, so only run it on a Saturday or when you
+mean to.
+
+```bash
+aws lambda invoke --function-name financial-management-sync \
+  --payload '{"mode":"daily"}' --cli-binary-format raw-in-base64-out \
+  --profile portfolio-dev --region us-west-2 /tmp/out.json
+```
+
+**Reading what's stored.** `aws dynamodb scan --table-name <Table>` with
+the profile/region flags. `FinancialHoldingsCurrent` is one item keyed
+`{"id":{"S":"current"}}`. `FinancialPlaidItems` rows contain `accessToken`
+— strip it before printing anything.
+
+**Calling Plaid directly (read-only).** Useful to check whether what's
+stored matches what Plaid/Fidelity says right now. The installed `plaid`
+SDK (v51) has a different shape from the one in Plaid's online docs
+(`new PlaidClient(...)`, namespaced calls like
+`plaidClient.investments.getHoldings`), so for ad-hoc checks plain REST is
+simplest:
+
+```bash
+set -a; source <(grep '^PLAID_' .env.local); set +a
+TOKEN=$(aws dynamodb get-item --table-name FinancialPlaidItems \
+  --key '{"itemId":{"S":"<itemId>"}}' --profile portfolio-dev --region us-west-2 \
+  --query 'Item.accessToken.S' --output text)
+curl -s -X POST "https://$PLAID_ENV.plaid.com/accounts/balance/get" \
+  -H 'Content-Type: application/json' \
+  -d "{\"client_id\":\"$PLAID_CLIENT_ID\",\"secret\":\"$PLAID_SECRET\",\"access_token\":\"$TOKEN\"}" \
+  | jq '.accounts[] | {mask, name, subtype, current: .balances.current, available: .balances.available}'
+```
+
+Swap the path for `/investments/holdings/get` (cached holdings) or
+`/investments/transactions/get` (add `start_date`, `end_date`,
+`options: {count, offset}`; paginate until `total_investment_transactions`).
+`/accounts/balance/get` is billed per call.
+
+**Correcting stored data.** Back up first (`aws dynamodb scan ... >
+backup.json`), then `update-item` the specific rows. There's no migration
+tooling; History/Net Worth rows are plain items keyed by `date`.
+
+## Current data state (as of 2026-11-21)
+
+Fidelity Item `6wJ68xEALqSeN37EJAEEsEzBPgnMr5U0jQO9R` exposes four accounts:
+
+| Mask | Name | Plaid subtype | Notes |
+|---|---|---|---|
+| 0094 | Individual - TOD | brokerage | Main taxable account. Core cash is SPAXX, which Plaid does **not** itemize — it appears via `reconcileCashHoldings`, and equals `balances.available`. Opened 2025-10-14, so `/investments/transactions/get` over 24 months covers its full history. |
+| 2233 | AMAZON 401(K) PLAN | 401k | Collective trust funds (`SSGA.LG.CAP.GROWTH`, `VANG.INST.500.IDX.TR`) — no public tickers, so no external quote source can price them. |
+| 4441 | AMAZON RSU | `stock plan` in holdings, `brokerage` in balance/get | Full grant (vested + unvested). Counted at **$0** today: no `transfer`/`transfer` vest transactions have been seen, so `vestedSharesByAccount` is empty. Verify vest detection when the next vest lands. |
+| 8139 | Individual - TOD | brokerage | Empty ($0). |
+
+Chase and Bank of America are separate `transactions`-product Items, used
+only for their balances in Net Worth.
+
+**Data corrections made:**
+- 2026-11-21 History/Net Worth rows were rewritten from the cached-holdings
+  value ($93,267.34) to the live balance value ($88,894.44; Net Worth total
+  $141,410.05).
+- 2026-11-09 (written by the initial link, a Monday) and 2026-11-14 were
+  computed from cached holdings prices and are probably overstated by a few
+  thousand dollars. They're intentionally kept; there's no way to recover
+  the live balance for a past date.
+
+**Settlement timing, for reference:** Fidelity books a trade on trade date
+and moves SPAXX on settlement (T+1), so SPAXX alone overstates cash between
+the two. The app is unaffected because it derives cash as
+`balances.current − itemized holdings`, and `current` is Fidelity's own
+netted account total.
+
+## Open items
+
+- XIRR on Portfolio History is deferred: a test calculation gave 445%
+  because contributions were lumped on a few dates. Revisit once
+  contributions carry real dates.
+- RSU vest detection hasn't been observed working against real data yet
+  (see the 4441 row above).
+
+## External references
+
+- Plaid Investments (holdings, transactions, refresh): https://plaid.com/docs/api/products/investments/
+- Plaid Accounts / balances field semantics: https://plaid.com/docs/api/accounts/
+- Plaid Balance (`/accounts/balance/get`): https://plaid.com/docs/api/products/balance/
+- Plaid webhooks and verification: https://plaid.com/docs/api/webhooks/ , https://plaid.com/docs/api/webhooks/webhook-verification/
+- Fidelity balance definitions (core vs. cash available to trade/withdraw): https://fidelity.com/products/stocksbonds/content/cash-available-to-trade.shtml , https://www.fidelity.com/trading/faqs-about-account
+- EventBridge Scheduler cron syntax: https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html
+
