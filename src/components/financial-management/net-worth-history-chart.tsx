@@ -1,10 +1,9 @@
 "use client";
 
 import {
-  Bar,
   CartesianGrid,
-  ComposedChart,
   Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -88,27 +87,15 @@ export default function NetWorthHistoryChart({
   const [filter, setFilter] = useState<TimeFilter>(DEFAULT_TIME_FILTER);
   const filtered = applyTimeFilter(points, filter);
   const multiYear = spansYears(filtered);
-  const data = filtered.map((p) => {
-    const row: Record<string, number | string> = { date: p.date, label: formatAxisDate(p.date, filter.granularity, multiYear), total: p.total };
-    for (const d of definitions) row[d.institution] = p.amounts[d.institution] ?? 0;
-    return row;
-  });
+  const data = filtered.map((p) => ({
+    date: p.date,
+    label: formatAxisDate(p.date, filter.granularity, multiYear),
+    total: p.total,
+  }));
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600" aria-label="Legend">
-          {definitions.map((d) => (
-            <span key={d.institution} className="flex items-center gap-1.5">
-              <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: d.color }} />
-              {d.institution}
-            </span>
-          ))}
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-0.5 w-4 rounded bg-gray-900" />
-            Total
-          </span>
-        </div>
+      <div className="mb-4 flex justify-end">
         <TimeFilterControls value={filter} onChange={setFilter} />
       </div>
 
@@ -119,37 +106,29 @@ export default function NetWorthHistoryChart({
       ) : (
         <div className="h-72 [&_*:focus]:outline-none">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <LineChart
+              data={data}
+              margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
+              onClick={(state) => {
+                const index = Number(state?.activeIndex);
+                if (Number.isInteger(index) && data[index]) onSelect(data[index].date);
+              }}
+              style={{ cursor: "pointer" }}
+            >
               <CartesianGrid vertical={false} stroke="#ececec" />
               <XAxis dataKey="label" tickLine={false} axisLine={{ stroke: "#d4d4d4" }} tick={{ fontSize: 12, fill: "#737373" }} />
               <YAxis
                 width={64}
+                domain={["auto", "auto"]}
                 tickLine={false}
                 axisLine={false}
                 tick={{ fontSize: 12, fill: "#737373" }}
                 tickFormatter={(v: number) => formatCompact(v)}
               />
               <Tooltip
-                cursor={{ fill: "rgba(0,0,0,0.04)" }}
+                cursor={{ stroke: "#d4d4d4" }}
                 content={<HistoryTooltip definitions={definitions} points={points} formatMoney={formatMoney} />}
               />
-              {definitions.map((d, i) => (
-                <Bar
-                  key={d.institution}
-                  dataKey={d.institution}
-                  stackId="buckets"
-                  fill={d.color}
-                  stroke="#ffffff"
-                  strokeWidth={2}
-                  maxBarSize={56}
-                  radius={i === definitions.length - 1 ? [4, 4, 0, 0] : 0}
-                  isAnimationActive={false}
-                  cursor="pointer"
-                  onClick={(entry: { payload?: { date?: string } }) => {
-                    if (entry.payload?.date) onSelect(entry.payload.date);
-                  }}
-                />
-              ))}
               <Line
                 dataKey="total"
                 type="linear"
@@ -159,12 +138,12 @@ export default function NetWorthHistoryChart({
                 activeDot={{ r: 5, fill: "#171717", stroke: "#ffffff", strokeWidth: 2 }}
                 isAnimationActive={false}
               />
-            </ComposedChart>
+            </LineChart>
           </ResponsiveContainer>
         </div>
       )}
       <p className="mt-2 text-xs text-gray-400">
-        Selected: {selectedDate} · click a bar to view that snapshot above.
+        Selected: {selectedDate} · click a point to view that snapshot above.
       </p>
     </div>
   );

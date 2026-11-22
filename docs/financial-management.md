@@ -217,9 +217,9 @@ secondary caption under the name. That mapping (and the fixed color/stack
 order) lives in `net-worth-buckets.ts`; an institution not listed there (a
 new bank, a second Chase connection) still shows, with no caption, after
 the known ones. The tab shows, for the selected snapshot, a donut plus a
-table of account, balance, and share; below it, a history chart of stacked
-bars per institution (dollar amounts) with the total as a line. Clicking a
-bar selects that snapshot.
+table of account, balance, and share; below it, a line chart of total Net
+Worth over time (hover for the per-institution split). Clicking a point
+selects that snapshot.
 
 ## Views
 
