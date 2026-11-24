@@ -510,9 +510,6 @@ netted account total.
   it showed about $20,559 against $24,830.22 in `balances.available`. Totals
   still match the balance. Proposed, not decided: price holdings with Yahoo
   closes and take cash from `available` (401(k) funds have no public quote).
-- Replay gap in `planExpenseSync`: if a run flags an approved row as
-  `removedByBank` and then fails before saving its cursor, the replay deletes
-  the row, because it is now `PENDING_REVIEW`. Fix: skip rows already flagged.
 - Delivery of the transactions webhook hasn't been observed in production yet.
   Opening the tab and the daily run cover for it.
 

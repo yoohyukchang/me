@@ -117,6 +117,14 @@ test("removed: unreviewed goes away, approved posted comes back flagged, exclude
   assert.equal(after[0].revision.removedByBank, true);
 });
 
+test("replaying a removal never deletes a row it already sent back to review", () => {
+  const removed = { removed: ["t1"] };
+  const once = run([{ ...imported(), status: "APPROVED" }], removed).rows;
+  assert.deepEqual(run(once, removed).ops, []);
+  const deferred = [{ ...once[0], status: "DEFERRED" }];
+  assert.deepEqual(run(deferred, removed).ops, []);
+});
+
 test("an account the bank stops sharing is reported, and stays known", () => {
   const live = [accounts[1]];
   assert.deepEqual(E.findMissingAccounts(accounts, live).map((a) => a.mask), ["3572"]);

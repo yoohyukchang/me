@@ -239,6 +239,8 @@ export function planExpenseSync(
   for (const id of changes.removed) {
     const row = rows.get(id);
     if (!row || isFrozen(row) || row.status === "EXCLUDED") continue;
+    // Already flagged by a run that failed before saving its cursor.
+    if (row.revision?.removedByBank) continue;
     if (row.status === "APPROVED" && !row.isPending) {
       replace(row, {
         ...row,
