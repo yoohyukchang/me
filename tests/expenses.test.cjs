@@ -20,7 +20,7 @@ const accounts = [
 ];
 const bank = (o = {}) => ({
   transactionId: "t1", pendingTransactionId: null, accountId: "card", amount: 10, merchant: "Cafe",
-  date: "2026-11-05", pending: false, categoryDetailed: "FOOD_AND_DRINK_COFFEE", ...o,
+  date: "2026-11-05", pending: false, ...o,
 });
 // Plans and applies, like the store would.
 function run(existing, changes, accts = accounts) {
@@ -63,16 +63,15 @@ test("November imports for review; replay is a no-op; refunds are skipped", () =
   assert.deepEqual(run(first.rows, { added: [bank()] }).ops, []);
 });
 
-test("card payments and brokerage transfers from checking are excluded; Zelle and card spending are not", () => {
+test("every outgoing transaction comes in for review; nothing is excluded by the sync", () => {
   const { rows } = run([], {
     added: [
-      bank({ transactionId: "pay", accountId: "chk", categoryDetailed: "LOAN_PAYMENTS_CREDIT_CARD_PAYMENT" }),
-      bank({ transactionId: "fid", accountId: "chk", categoryDetailed: "TRANSFER_OUT_INVESTMENT_AND_RETIREMENT_FUNDS" }),
-      bank({ transactionId: "zelle", accountId: "chk", categoryDetailed: "TRANSFER_OUT_TRANSFER_OUT_FROM_APPS" }),
-      bank({ transactionId: "rent", accountId: "chk", categoryDetailed: "RENT_AND_UTILITIES_RENT" }),
+      bank({ transactionId: "pay", accountId: "chk", merchant: "CHASE CREDIT CRD EPAY" }),
+      bank({ transactionId: "fid", accountId: "chk", merchant: "Fidelity", amount: 25000 }),
+      bank({ transactionId: "card" }),
     ],
   });
-  assert.deepEqual(rows.map((r) => r.status), ["EXCLUDED", "EXCLUDED", "PENDING_REVIEW", "PENDING_REVIEW"]);
+  assert.deepEqual(rows.map((r) => r.status), ["PENDING_REVIEW", "PENDING_REVIEW", "PENDING_REVIEW"]);
 });
 
 test("pending → posted keeps the review and hand-edited values, without duplicating", () => {

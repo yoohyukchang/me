@@ -27,7 +27,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     next.reviewedAt = now;
     delete next.revision;
   }
-  delete next.autoExcluded;
   await saveExpense(next, row.updatedAt);
   return NextResponse.json({ transaction: next });
 }

@@ -82,7 +82,7 @@ export default function ExpenseTransactions({
                   <span className="mt-0.5 flex items-center gap-1.5 text-xs text-gray-400">
                     {category && <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: category.color }} />}
                     <span className="truncate">
-                      {t.autoExcluded ? "Own transfer / card payment" : category?.name ?? "Uncategorized"} · {t.date}
+                      {category?.name ?? "Uncategorized"} · {t.date}
                       {t.notes && ` · ${t.notes}`}
                     </span>
                   </span>

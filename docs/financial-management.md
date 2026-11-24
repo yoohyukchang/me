@@ -267,8 +267,8 @@ Rules that aren't obvious from the code:
 - `bankAmount`/`bankMerchant`/`bankDate` hold what the bank said; the plain
   fields are the owner's and are often edited (splits, rent month).
 - Excluding keeps the row, so a re-link can't bring it back.
-- Card payments and own-account transfers are auto-excluded; refunds are
-  ignored (the owner adjusts by hand).
+- Nothing outgoing is filtered: card payments and transfers come in for review
+  and the owner excludes them. Refunds are ignored (adjusted by hand).
 - Dates are calendar strings; never put them through `new Date()` for month
   math (the old app misfiled every 1st of the month in Pacific time).
 - Net Worth counts depository accounts only; card balances are ignored.

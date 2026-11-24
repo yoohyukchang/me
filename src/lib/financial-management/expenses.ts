@@ -31,8 +31,6 @@ export interface ExpenseTransaction {
   importedAt: string;
   updatedAt: string;
   revision?: ExpenseRevision;
-  /** Set when the sync excluded this itself (card payment, own-account transfer). */
-  autoExcluded?: boolean;
   /**
    * What the bank last reported, kept apart from the editable fields above so
    * a bank update never overwrites a hand-edited amount, merchant, or date.
@@ -61,7 +59,6 @@ export interface BankTransaction {
   merchant: string;
   date: string;
   pending: boolean;
-  categoryDetailed: string | null;
 }
 
 export interface BankAccount {
@@ -87,14 +84,6 @@ export type ExpenseOp =
 /** History before this day was reviewed in the original app and is closed: sync never adds, changes, or removes it. */
 export const EXPENSES_SYNC_FROM = "2026-11-01";
 
-/** Money moving between the owner's own accounts; the spending itself is already counted on the card. */
-const OWN_TRANSFER_CATEGORIES = new Set([
-  "LOAN_PAYMENTS_CREDIT_CARD_PAYMENT",
-  "TRANSFER_OUT_INVESTMENT_AND_RETIREMENT_FUNDS",
-  "TRANSFER_OUT_SAVINGS",
-  "TRANSFER_OUT_ACCOUNT_TRANSFER",
-]);
-
 export function isFrozen(row: ExpenseTransaction): boolean {
   return (row.bankDate ?? row.date) < EXPENSES_SYNC_FROM;
 }
@@ -112,12 +101,9 @@ export function planExpenseSync(
 
   function fresh(txn: BankTransaction): ExpenseTransaction {
     const account = accountById.get(txn.accountId);
-    const ownTransfer =
-      account?.type === "depository" && txn.categoryDetailed !== null && OWN_TRANSFER_CATEGORIES.has(txn.categoryDetailed);
     return {
       transactionId: txn.transactionId,
-      status: ownTransfer ? "EXCLUDED" : "PENDING_REVIEW",
-      ...(ownTransfer ? { autoExcluded: true } : {}),
+      status: "PENDING_REVIEW",
       merchantName: txn.merchant,
       originalAmount: txn.amount,
       date: txn.date,

@@ -56,7 +56,6 @@ function toBankTransaction(txn: {
   authorized_date: string | null;
   date: string;
   pending: boolean;
-  personal_finance_category?: { detailed: string } | null;
 }): BankTransaction {
   return {
     transactionId: txn.transaction_id,
@@ -66,6 +65,5 @@ function toBankTransaction(txn: {
     merchant: txn.merchant_name ?? txn.name,
     date: txn.authorized_date ?? txn.date,
     pending: txn.pending,
-    categoryDetailed: txn.personal_finance_category?.detailed ?? null,
   };
 }
