@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     await syncItemExpenses(outcome.itemId);
   } else if (outcome.kind === "data_ready") {
     // Only to backfill a freshly-linked Item whose holdings lagged; after that,
-    // holdings refresh solely on the Saturday schedule.
+    // holdings refresh only on the daily schedule.
     const current = await getCurrentHoldings();
     const item = await getPlaidItem(outcome.itemId);
     if (item && !current?.holdings.length) await syncItem(item);

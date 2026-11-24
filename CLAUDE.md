@@ -27,7 +27,8 @@ comments, docs, and commit messages in English.
 - `npx tsc --noEmit -p .` and `node --test tests/*.test.cjs` from the repo root.
 - Infra: `cdk synth` per README. The two `fx.ts` errors from
   `cd infra && npx tsc` are pre-existing and expected.
-- Code under `src/lib/financial-management/{integrator,providers,store}` runs
+- Code under `src/lib/financial-management/{integrator,providers,store}` and
+  `expenses.ts` runs
   in **both** Vercel and the Lambda; a change there needs both deploys.
 
 ## Rules
@@ -47,6 +48,15 @@ comments, docs, and commit messages in English.
   explicitly; zsh won't word-split a `$P` variable holding them.
 
 ## Gotchas already learned
+
+- Plaid: one Item per bank, all accounts selected. A second link with a
+  different selection silently drops accounts from the first. Healthy status
+  and no errors don't prove data is flowing. See design doc → "One Item per
+  bank".
+- Expenses before 2026-11-01 are closed to the sync. After touching that code
+  or data, check that August–October totals still match the design doc.
+- Expense months are string math on `YYYY-MM-DD`; never `new Date(date)`.
+- Nothing is auto-excluded from expense review, by the owner's choice.
 
 - `/investments/holdings/get` is Plaid's cached extraction; its prices can
   lag Fidelity by a trading day (~$4.4k once). Weekly snapshots use live

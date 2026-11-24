@@ -17,7 +17,7 @@ export interface ExpenseTransaction {
   status: ExpenseStatus;
   merchantName: string;
   originalAmount: number;
-  /** YYYY-MM-DD, the calendar day spending is counted on. */
+  /** YYYY-MM-DD, the day spending is counted on. Compare as a string: `new Date()` shifts it by timezone. */
   date: string;
   categoryId?: string | null;
   accountId: string;
@@ -32,9 +32,9 @@ export interface ExpenseTransaction {
   updatedAt: string;
   revision?: ExpenseRevision;
   /**
-   * What the bank last reported, kept apart from the editable fields above so
-   * a bank update never overwrites a hand-edited amount, merchant, or date.
-   * Absent on rows migrated from the original app and on manual entries.
+   * What the bank last reported, kept apart from the owner-editable fields
+   * above. An edit survives syncs, except that an edited amount is replaced
+   * when the bank's own amount changes. Absent on migrated and manual rows.
    */
   bankAmount?: number;
   bankMerchant?: string;
@@ -75,19 +75,27 @@ export interface BankChanges {
   removed: string[];
 }
 
+/**
+ * One ledger write. `previousUpdatedAt` is the version the plan was made from;
+ * "rekey" moves a row to a new transaction id (pending → posted, re-link).
+ */
 export type ExpenseOp =
   | { kind: "insert"; row: ExpenseTransaction }
   | { kind: "update"; row: ExpenseTransaction; previousUpdatedAt: string }
   | { kind: "rekey"; oldId: string; row: ExpenseTransaction; previousUpdatedAt: string }
   | { kind: "delete"; id: string; previousUpdatedAt: string };
 
-/** History before this day was reviewed in the original app and is closed: sync never adds, changes, or removes it. */
+/** Earlier history is closed: the sync never adds, changes, or removes it. */
 export const EXPENSES_SYNC_FROM = "2026-11-01";
 
 export function isFrozen(row: ExpenseTransaction): boolean {
   return (row.bankDate ?? row.date) < EXPENSES_SYNC_FROM;
 }
 
+/**
+ * Turns one Item's bank changes into ledger writes. Pure. Must tolerate a
+ * replay: a run that fails before saving its cursor sees the same changes again.
+ */
 export function planExpenseSync(
   existing: ExpenseTransaction[],
   changes: BankChanges,
@@ -119,6 +127,7 @@ export function planExpenseSync(
     };
   }
 
+  /** Applies a bank update to a row, sending it back to review if an approved value changed. */
   function absorb(row: ExpenseTransaction, incoming: BankTransaction): ExpenseTransaction {
     // A late date correction must not move an open transaction into closed history.
     const txn =
@@ -252,7 +261,7 @@ export function findMissingAccounts(known: BankAccount[], live: BankAccount[]): 
   return known.filter((a) => !liveKeys.has(key(a)));
 }
 
-/** Everything ever shared, with live details winning. */
+/** Every account ever shared; live details win. */
 export function mergeKnownAccounts(known: BankAccount[], live: BankAccount[]): BankAccount[] {
   return [...live, ...findMissingAccounts(known, live)];
 }

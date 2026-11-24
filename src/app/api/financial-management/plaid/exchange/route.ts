@@ -15,8 +15,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "product must be investments or transactions" }, { status: 400 });
   }
 
-  // A second Item for the same bank makes the bank drop accounts from the
-  // first one (Chase does this on any differing account selection).
+  // A second Item for the same bank can silently drop accounts from the first
+  // (seen with Chase and BofA when the account selection differed).
   if (typeof body.institutionId === "string") {
     const existing = await listPlaidItems();
     if (existing.some((i) => i.institutionId === body.institutionId && i.product === body.product)) {

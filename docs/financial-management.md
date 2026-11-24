@@ -10,6 +10,9 @@ Plaid can't make), and tracking contributions and any holding outside the
 connected providers — a Korean brokerage account, for instance, or any
 future account that isn't Plaid-reachable.
 
+The Expenses tab is the exception on both counts: it syncs bank transactions
+when opened, and each transaction is reviewed by hand. See [Expenses](#expenses).
+
 ## Layers
 
 ```
@@ -32,6 +35,9 @@ src/lib/financial-management/
   integrator/sync.ts     syncItem() / refreshInvestmentHoldings() /
                          runWeeklySnapshot() — the only thing that
                          orchestrates providers and writes the stored snapshots
+  expenses.ts            expense types and pure rules: planExpenseSync(),
+                         findMissingAccounts(), summarizeMonth()
+  integrator/expense-sync.ts  syncItemExpenses() / syncAllExpenses()
   integrator/vesting.ts  pure ledger-reconciliation for vested share tracking
   store/                 one file per DynamoDB table, no business logic
 
@@ -57,11 +63,13 @@ folder and add a case in `integrator/sync.ts`. Everything above that layer
 
 | Table | Key | Purpose |
 |---|---|---|
-| `FinancialPlaidItems` | `itemId` | One row per linked institution: access token (KMS-encrypted), status, current balance (depository items), vested-share tracking (the Fidelity item). |
+| `FinancialPlaidItems` | `itemId` | One row per linked institution: access token (KMS-encrypted), status, current balance (depository items), vested-share tracking (the Fidelity item), expense cursor and known/missing accounts (bank items). |
 | `FinancialHoldingsViews` | `id` | Named groupings of holdings ("By Category", or whatever you add). |
 | `FinancialHoldingsViewCategories` | `viewId`, `id` | Categories, scoped per view. |
 | `FinancialHoldingsAssignments` | `viewId`, `holdingKey` | Which category a holding sits in, per view. No row = Uncategorized, computed at read time. |
 | `FinancialHoldingsCurrent` | fixed `"current"` | Latest Fidelity accounts/holdings/securities blob, overwritten daily. |
+| `FinancialExpenseTransactions` | `transactionId` | The expense ledger: Plaid transaction id, or `manual_<uuid>` for cash. PITR + deletion protection. |
+| `FinancialExpenseCategories` | `categoryId` | Expense categories, unrelated to holdings categories. Can't be deleted while in use. PITR + deletion protection. |
 | `FinancialManualHoldings` | `id` | Holdings maintained by hand — any account Plaid can't reach, in whichever currency it's actually held in. |
 | `FinancialContributions` | `id` | The contribution ledger — money moved into the portfolio from outside it. Plaid-imported rows (`source: "plaid"`, id `plaid-<accountId>-<date>`, read-only) plus manual rows (UUID id, exchange rate locked at entry time). |
 | `FinancialBenchmarkPrices` | `symbol`, `date` | Daily closes of the benchmark index (`^SP500TR`), appended by the Saturday run. |
@@ -243,51 +251,93 @@ its own categorization.
 
 ## Expenses
 
-Card and checking spending, reviewed by hand (category, then Confirm /
-Defer / Exclude). Moved here in November 2026 from a standalone app.
+Card and checking spending, reviewed by hand: pick a category, then Confirm,
+Defer, or Exclude. Replaced a standalone phone app in November 2026, whose
+AWS resources and Plaid Items have been deleted.
 
-- `expenses.ts`: types and the pure rules. `planExpenseSync()` turns bank
-  changes into ledger writes, `summarizeMonth()` computes totals.
-- `integrator/expense-sync.ts`: `/transactions/sync` per bank Item (not
-  billed per call). Runs on the webhook, when the tab opens, and daily in the
-  Lambda. A 90s lock on the Item keeps runs from overlapping.
-- `FinancialExpenseTransactions` (`transactionId`) and
-  `FinancialExpenseCategories` (`categoryId`): PITR + deletion protection.
+### Flow
 
-Rules that aren't obvious from the code:
+1. A sync runs per bank Item: on the `TRANSACTIONS/SYNC_UPDATES_AVAILABLE`
+   webhook, when the Expenses tab opens (or its Sync button), and daily in
+   the Lambda. All call `syncItemExpenses()` (`integrator/expense-sync.ts`).
+2. It claims a 90s lock on the Item, fetches accounts and `/transactions/sync`
+   changes (neither billed per call), and passes them with the stored ledger
+   to the pure `planExpenseSync()` (`expenses.ts`), which returns the writes.
+3. Writes are conditional on `updatedAt`, so a sync can't overwrite a review
+   made meanwhile. The cursor is saved last; a failed run is replayed.
 
-- **Everything before 2026-11-01 (`EXPENSES_SYNC_FROM`) is closed.** Those 313
-  rows were migrated verbatim; sync never adds, changes, or removes there.
-- **One Item per bank, with every account selected.** After Chase and BofA
-  were linked again with only checking selected, the older Items stopped
-  returning their credit cards, with no error. Linking Chase once more also
-  left the previous Item in `ITEM_LOGIN_REQUIRED`. Hence the 409 in
-  `plaid/exchange` and the `missingAccounts` warning. "No sync errors" does
-  not mean data is flowing: compare `/accounts/get` with `knownAccounts`.
-- `bankAmount`/`bankMerchant`/`bankDate` hold what the bank said; the plain
-  fields are the owner's and are often edited (splits, rent month).
-- Excluding keeps the row, so a re-link can't bring it back.
-- Nothing outgoing is filtered: card payments and transfers come in for review
-  and the owner excludes them. Refunds are ignored (adjusted by hand).
-- Dates are calendar strings; never put them through `new Date()` for month
-  math (the old app misfiled every 1st of the month in Pacific time).
-- Net Worth counts depository accounts only; card balances are ignored.
+### Statuses
+
+| Status | Meaning |
+|---|---|
+| `PENDING_REVIEW` | In the Review queue. Every import starts here, as does manual cash spending. |
+| `DEFERRED` | Still in Review, after the rest. |
+| `APPROVED` | Confirmed; the only status counted in totals. Needs a category. |
+| `EXCLUDED` | Not spending. The row is kept so a later sync or re-link can't bring it back. Restorable from Transactions → Excluded. |
+
+### Rules to keep
+
+- **Before 2026-11-01 (`EXPENSES_SYNC_FROM`) is closed.** The 313 migrated
+  rows are never added to, changed, or removed by a sync. The owner can still
+  edit them by hand.
+- **Nothing outgoing is filtered.** Card payments and transfers come into
+  Review and the owner excludes them; auto-excluding was tried and removed
+  at their request. Money in (refunds) is skipped; they adjust by hand.
+- **Owner edits win.** `bankAmount`/`bankMerchant`/`bankDate` hold what the
+  bank last reported; `originalAmount`/`merchantName`/`date` are editable
+  (split bills, rent month). A sync replaces an edited amount only when the
+  bank's own amount changes, and an edited merchant or date never.
+- **A bank change to an approved amount or merchant** returns the row to
+  Review with a `revision` (before → after). If the bank reverts it, the row
+  goes back to `APPROVED`. A posted approved row the bank withdraws is
+  flagged (`removedByBank`), not deleted.
+- **Pending → posted** gives a new transaction id; the row is re-keyed and
+  its review kept.
+- **Months are string math** on `YYYY-MM-DD` (`monthOf`). `new Date(date)`
+  parses as UTC and puts the 1st in the previous month in Pacific time, which
+  the old app did (it showed October as $6,879.09; the real total is
+  $7,234.92). `date` is the bank's authorized date, else its posted date.
+
+### One Item per bank, every account selected
+
+This is the incident that led to the move. On 2026-11-09 this site linked
+Chase and BofA with checking only, while the old app held its own Items on
+the same Plaid client. The old Items then silently lost their credit cards:
+`active`, no error, syncs succeeding, no card transactions. Linking Chase
+again on 11-23 left this site's Chase Item in `ITEM_LOGIN_REQUIRED`, visible
+only on a live call. Plaid documents this for Chase (a second Item with a
+different account selection can invalidate the first); BofA behaved the same.
+
+- Don't link a bank twice, from here or any other app on this Plaid client.
+  `plaid/exchange` returns 409 for a duplicate, but the bank's OAuth has
+  already run by then, so the existing Item may need Reconnect.
+- To change accounts use Accounts → **Manage accounts** (Link update mode)
+  and select all of them. Anything left unselected stops being shared.
+- "No sync errors" doesn't mean data is flowing. `knownAccounts` (every account
+  ever shared) is compared with `/accounts/get`, and gaps are stored as
+  `missingAccounts` and shown as a warning. A deliberately dropped account
+  keeps warning until the Item is removed.
+- If a bank is disconnected and re-linked, reviews carry over by account
+  mask + bank date + bank amount (`findRelinked`).
+- Net Worth sums depository accounts only (`plaidBalanceProvider.fetchBalance`).
+  Card balances are debt and are deliberately left out.
 
 ## Schedule & failure handling
 
 EventBridge Scheduler (not a plain cron Rule — it has a native retry
 policy) invokes `financial-management-sync` at 13:00 UTC every day: with
-`{"mode":"daily"}` Sunday–Friday (refresh the holdings snapshot only), and
+`{"mode":"daily"}` Sunday–Friday (refresh the holdings snapshot), and
 with `{"mode":"weekly"}` on Saturday, safely after Friday's close and
-settlement (sync every Item, then record Portfolio History and Net Worth). Failed invocations retry up to
+settlement (sync every Item, then record Portfolio History and Net Worth).
+Both modes end with an expense sync, even if the first part failed. Failed invocations retry up to
 10 times over the next 24 hours; if every retry is exhausted, the event
 lands in the `FinancialManagementSyncDLQ` SQS queue instead of vanishing
 silently. A single broken Plaid Item (`ITEM_LOGIN_REQUIRED`) doesn't block
 the rest of the run — it's marked `login_required` and the Portfolio
 Holdings tab's Accounts panel shows a "Reconnect" action for just that
-institution; a healthy connection also offers "Add account" (Link update
-mode) for granting access to an account you didn't originally share, and
-"Disconnect" to cleanly remove a connection (calls `/item/remove`, not just
+institution; a healthy connection also offers "Manage accounts" (banks) or
+"Add account" (Fidelity), both Link update mode, for granting access to an
+account you didn't originally share, and "Disconnect" to cleanly remove a connection (calls `/item/remove`, not just
 a local delete).
 
 **A brand-new Fidelity Item's holdings can lag its own transactions feed.**
@@ -338,16 +388,20 @@ those flags in a variable like `$P`; zsh won't word-split it.
 - Infra (tables, Lambda, schedules): `cd infra`, export the Plaid vars, then
   `AWS_PROFILE=portfolio-dev npx cdk deploy FinancialManagementStack`.
   The Lambda bundles `src/lib/financial-management/**` at deploy time, so any
-  change to `integrator/`, `providers/`, or `store/` needs a CDK deploy too,
-  not just a Vercel one.
+  change to `integrator/`, `providers/`, `store/`, or `expenses.ts` needs a CDK
+  deploy too, not just a Vercel one. Run `cdk diff` first: an existing table
+  must never show as replaced or destroyed.
+- Names are explicit, with no CDK-generated suffixes: tables `Financial*`,
+  everything else `financial-management-*` (the DLQ is the one exception).
 
   ```bash
   set -a; source <(grep '^PLAID_' ../.env.local); set +a
   AWS_PROFILE=portfolio-dev npx cdk deploy FinancialManagementStack
   ```
 
-**Running the Lambda by hand.** `{"mode":"daily"}` only rewrites
-`FinancialHoldingsCurrent` (safe any time); `{"mode":"weekly"}` also writes
+**Running the Lambda by hand.** `{"mode":"daily"}` rewrites
+`FinancialHoldingsCurrent`, upserts imported contributions, and syncs expenses
+(safe any time); `{"mode":"weekly"}` also writes
 today's History/Net Worth rows, so only run it on a Saturday or when you
 mean to.
 
@@ -380,6 +434,11 @@ curl -s -X POST "https://$PLAID_ENV.plaid.com/accounts/balance/get" \
   | jq '.accounts[] | {mask, name, subtype, current: .balances.current, available: .balances.available}'
 ```
 
+`/accounts/get` (shared accounts, cached balances) and `/item/get` (last
+successful update, webhook) are free. `/item/get` and `/accounts/get` can look
+healthy while a live call fails with `ITEM_LOGIN_REQUIRED`, so use
+`/accounts/balance/get` once when a connection is in doubt.
+
 Swap the path for `/investments/holdings/get` (cached holdings) or
 `/investments/transactions/get` (add `start_date`, `end_date`,
 `options: {count, offset}`; paginate until `total_investment_transactions`).
@@ -389,19 +448,32 @@ Swap the path for `/investments/holdings/get` (cached holdings) or
 backup.json`), then `update-item` the specific rows. There's no migration
 tooling; History/Net Worth rows are plain items keyed by `date`.
 
-## Current data state (as of 2026-11-21)
+## Current data state (as of 2026-11-23)
 
 Fidelity Item `6wJ68xEALqSeN37EJAEEsEzBPgnMr5U0jQO9R` exposes four accounts:
 
 | Mask | Name | Plaid subtype | Notes |
 |---|---|---|---|
-| 0094 | Individual - TOD | brokerage | Main taxable account. Core cash is SPAXX, which Plaid does **not** itemize — it appears via `reconcileCashHoldings`, and equals `balances.available`. Opened 2025-10-14, so `/investments/transactions/get` over 24 months covers its full history. |
+| 0094 | Individual - TOD | brokerage | Main taxable account. Core cash is SPAXX, which Plaid does **not** itemize — it appears via `reconcileCashHoldings`, and equals `balances.available` when prices and balance are from the same day (see Open items). Opened 2025-10-14, so `/investments/transactions/get` over 24 months covers its full history. |
 | 2233 | AMAZON 401(K) PLAN | 401k | Collective trust funds (`SSGA.LG.CAP.GROWTH`, `VANG.INST.500.IDX.TR`) — no public tickers, so no external quote source can price them. |
-| 4441 | AMAZON RSU | `stock plan` in holdings, `brokerage` in balance/get | Full grant (vested + unvested). Counted at **$0** today: no `transfer`/`transfer` vest transactions have been seen, so `vestedSharesByAccount` is empty. Verify vest detection when the next vest lands. |
+| 4441 | AMAZON RSU | `stock plan` in holdings, `brokerage` in balance/get | Full grant (vested + unvested). Counted at **$0** today: no `transfer`/`transfer` vest transactions have been seen, so `vestedSharesByAccount` is empty. The owner confirmed on 2026-11-23 that nothing has vested. Verify vest detection when the next vest lands. |
 | 8139 | Individual - TOD | brokerage | Empty ($0). |
 
-Chase and Bank of America are separate `transactions`-product Items, used
-only for their balances in Net Worth.
+Chase and Bank of America are separate `transactions`-product Items, feeding
+Net Worth (checking only) and Expenses (all accounts):
+
+| Bank | Item | Accounts |
+|---|---|---|
+| Chase | `q4jO4R5aamUe8JNXQvjeSVO338NPvJFNnVv90` | card 3572, checking 9786 |
+| Bank of America | `kVmxBe4EQzuzdweeD1NeIO91Jby7XmT9KZAeX` | checking 1707, card 4464 |
+
+**Expenses:** migrated 2026-11-23 from the old app, every field verified equal:
+August 92 rows $4,987.67, September 82 rows $4,178.74, October 139 rows
+$7,234.92. November was restarted from zero at the owner's request. The last
+three rows auto-excluded before that rule was removed (2026-11-02 Fidelity
+$25,000; 11-09 $499.03; 11-23 $2,443.11) were left excluded and still carry
+an unused `autoExcluded` attribute. Some migrated rows carry other attributes
+of the old app (`gsi1pk`, `splitDetails`, `effectiveAmount`…); nothing reads them.
 
 **Data corrections made:**
 - 2026-11-21 History/Net Worth rows were rewritten from the cached-holdings
@@ -425,6 +497,24 @@ the two. The app is unaffected because it derives cash as
 netted account total.
 
 ## Open items
+
+- **Fidelity data was stale on 2026-11-23.** After Monday's close Plaid's last
+  successful update was still 11-20 09:55 PT, and even `/accounts/balance/get`
+  matched Saturday's value to the cent ($88,894.44; repricing at the 11-23
+  close gives about $94,650). Holdings prices labelled 11-20 were really 11-19
+  closes, so "Prices as of" isn't reliable. To tell lag from a stuck
+  connection, see whether `/item/get` `status.investments` advances after a
+  trading day; if not, Reconnect.
+- **Cash can be wrong on the Holdings tab.** `reconcileCashHoldings` subtracts
+  cached-price holdings from a balance that may be from another day. On 11-23
+  it showed about $20,559 against $24,830.22 in `balances.available`. Totals
+  still match the balance. Proposed, not decided: price holdings with Yahoo
+  closes and take cash from `available` (401(k) funds have no public quote).
+- Replay gap in `planExpenseSync`: if a run flags an approved row as
+  `removedByBank` and then fails before saving its cursor, the replay deletes
+  the row, because it is now `PENDING_REVIEW`. Fix: skip rows already flagged.
+- Delivery of the transactions webhook hasn't been observed in production yet.
+  Opening the tab and the daily run cover for it.
 
 - XIRR on Portfolio History is deferred: a test calculation gave 445%
   because contributions were lumped on one date. Contributions now carry

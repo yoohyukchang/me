@@ -186,7 +186,7 @@ export class FinancialManagementStack extends cdk.Stack {
     // policy + DLQ — "retry until it succeeds" needs that, a Rule doesn't
     // have it. Saturday 13:00 UTC: safely after Friday close + settlement —
     // the weekly run refreshes holdings and records History/Net Worth; the
-    // other six days only refresh holdings.
+    // other six days only refresh holdings. Every run also syncs expenses.
     const schedulerRole = new iam.Role(this, "SchedulerRole", {
       roleName: "financial-management-scheduler",
       assumedBy: new iam.ServicePrincipal("scheduler.amazonaws.com"),
@@ -215,8 +215,8 @@ export class FinancialManagementStack extends cdk.Stack {
     dlq.grantSendMessages(schedulerRole);
 
     // Scoped-down IAM user for the Next.js app (running on Vercel). It runs
-    // the same integrator code as the Lambda for the one-time post-link
-    // sync, so it needs the same table/KMS access — no console access, no
+    // the same integrator code as the Lambda (post-link, webhook, and
+    // expense syncs), so it needs the same table/KMS access — no console access, no
     // other AWS permissions.
     const appUser = new iam.User(this, "AppUser", {
       userName: "financial-management-app",

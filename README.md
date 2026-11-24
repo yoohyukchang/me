@@ -7,8 +7,9 @@ It has two halves that share nothing but the framework:
   `/projects`. Static content in `src/app/page.tsx`, `src/app/projects/`,
   and `src/components/home/`, `src/components/projects/`.
 - **Financial Management** — `/financial-management`, a password-gated
-  personal finance dashboard backed by Plaid (Fidelity, Chase, Bank of
-  America), DynamoDB, and a scheduled AWS Lambda. Full architecture, data
+  personal finance dashboard (holdings, history, net worth, expenses) backed
+  by Plaid (Fidelity, Chase, Bank of America), DynamoDB, and a scheduled AWS
+  Lambda. Full architecture, data
   model, runbook, and current data state:
   [`docs/financial-management.md`](docs/financial-management.md).
 

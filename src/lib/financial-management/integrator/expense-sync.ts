@@ -5,10 +5,10 @@ import * as plaidItemsStore from "../store/plaid-items";
 import type { PlaidItem } from "../types";
 
 /**
- * Pulls one bank Item's transaction changes into the expense ledger. Never
- * throws: a failure is recorded on the Item (and shown on the Expenses tab)
- * so one broken bank can't stop the others. The cursor advances only after
- * every write succeeded, so a failed run is simply replayed.
+ * Pulls one bank Item's transaction changes into the expense ledger. A sync
+ * failure is recorded on the Item (and shown on the Expenses tab) instead of
+ * thrown, so one broken bank can't stop the others. The cursor advances only
+ * after every write succeeded, so a failed run is replayed.
  */
 export async function syncItemExpenses(itemId: string): Promise<void> {
   const item = await plaidItemsStore.claimExpenseSync(itemId);
@@ -24,6 +24,7 @@ export async function syncItemExpenses(itemId: string): Promise<void> {
 }
 
 async function runSync(item: PlaidItem): Promise<void> {
+  // Checked on every run: a bank can stop sharing an account without any error.
   const live = await plaidTransactionsProvider.fetchAccounts(item.accessToken);
   const known = item.knownAccounts ?? [];
   const accounts = mergeKnownAccounts(known, live);
