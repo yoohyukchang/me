@@ -111,6 +111,24 @@ export class FinancialManagementStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
+    const expenseTransactionsTable = new dynamodb.Table(this, "ExpenseTransactionsTable", {
+      tableName: "FinancialExpenseTransactions",
+      partitionKey: { name: "transactionId", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
+      deletionProtection: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
+    const expenseCategoriesTable = new dynamodb.Table(this, "ExpenseCategoriesTable", {
+      tableName: "FinancialExpenseCategories",
+      partitionKey: { name: "categoryId", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
+      deletionProtection: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
     const tables = [
       plaidItemsTable,
       viewsTable,
@@ -122,6 +140,8 @@ export class FinancialManagementStack extends cdk.Stack {
       manualHoldingsTable,
       contributionsTable,
       benchmarkPricesTable,
+      expenseTransactionsTable,
+      expenseCategoriesTable,
     ];
 
     const dlq = new sqs.Queue(this, "SyncDeadLetterQueue", {
@@ -150,6 +170,8 @@ export class FinancialManagementStack extends cdk.Stack {
         FINANCIAL_MANAGEMENT_MANUAL_HOLDINGS_TABLE: manualHoldingsTable.tableName,
         FINANCIAL_MANAGEMENT_CONTRIBUTIONS_TABLE: contributionsTable.tableName,
         FINANCIAL_MANAGEMENT_BENCHMARK_PRICES_TABLE: benchmarkPricesTable.tableName,
+        FINANCIAL_MANAGEMENT_EXPENSE_TRANSACTIONS_TABLE: expenseTransactionsTable.tableName,
+        FINANCIAL_MANAGEMENT_EXPENSE_CATEGORIES_TABLE: expenseCategoriesTable.tableName,
         PLAID_CLIENT_ID: requiredEnv("PLAID_CLIENT_ID"),
         PLAID_SECRET: requiredEnv("PLAID_SECRET"),
         PLAID_ENV: process.env.PLAID_ENV || "production",

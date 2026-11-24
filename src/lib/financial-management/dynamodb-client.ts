@@ -43,3 +43,7 @@ export const CONTRIBUTIONS_TABLE =
   process.env.FINANCIAL_MANAGEMENT_CONTRIBUTIONS_TABLE || "FinancialContributions";
 export const BENCHMARK_PRICES_TABLE =
   process.env.FINANCIAL_MANAGEMENT_BENCHMARK_PRICES_TABLE || "FinancialBenchmarkPrices";
+export const EXPENSE_TRANSACTIONS_TABLE =
+  process.env.FINANCIAL_MANAGEMENT_EXPENSE_TRANSACTIONS_TABLE || "FinancialExpenseTransactions";
+export const EXPENSE_CATEGORIES_TABLE =
+  process.env.FINANCIAL_MANAGEMENT_EXPENSE_CATEGORIES_TABLE || "FinancialExpenseCategories";

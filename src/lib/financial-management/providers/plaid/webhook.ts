@@ -70,6 +70,7 @@ export type ItemWebhookOutcome =
   | { kind: "login_required"; itemId: string }
   | { kind: "repaired"; itemId: string }
   | { kind: "data_ready"; itemId: string }
+  | { kind: "transactions_ready"; itemId: string }
   | { kind: "ignored" };
 
 /**
@@ -94,10 +95,14 @@ export function classifyItemWebhook(body: Record<string, unknown>): ItemWebhookO
       const errorCode = (body.error as { error_code?: string } | undefined)?.error_code;
       if (errorCode === "ITEM_LOGIN_REQUIRED") return { kind: "login_required", itemId };
     }
-    if (webhookCode === "PENDING_DISCONNECT" || webhookCode === "PENDING_EXPIRATION") {
+    if (webhookCode === "PENDING_DISCONNECT" || webhookCode === "PENDING_EXPIRATION" || webhookCode === "USER_PERMISSION_REVOKED") {
       return { kind: "login_required", itemId };
     }
     if (webhookCode === "LOGIN_REPAIRED") return { kind: "repaired", itemId };
+  }
+
+  if (webhookType === "TRANSACTIONS" && webhookCode === "SYNC_UPDATES_AVAILABLE") {
+    return { kind: "transactions_ready", itemId };
   }
 
   if (webhookType === "HOLDINGS" || webhookType === "INVESTMENTS_TRANSACTIONS") {

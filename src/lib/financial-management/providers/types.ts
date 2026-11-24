@@ -1,3 +1,4 @@
+import type { BankAccount, BankChanges } from "../expenses";
 import type { Account, Holding, Security } from "../types";
 
 /**
@@ -37,8 +38,15 @@ export interface BenchmarkProvider {
 export interface AccountBalance {
   accountId: string;
   name: string;
+  type: string;
   subtype: string | null;
   current: number;
+}
+
+/** Contract for a bank's transaction feed — the Expenses tab. */
+export interface TransactionsProvider {
+  fetchChanges(accessToken: string, cursor: string | null): Promise<{ changes: BankChanges; nextCursor: string }>;
+  fetchAccounts(accessToken: string): Promise<BankAccount[]>;
 }
 
 /** Contract for live, institution-reported balances — Net Worth and the weekly snapshots. */

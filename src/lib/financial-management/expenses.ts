@@ -1,0 +1,310 @@
+/** Types and pure rules for the Expenses tab — no SDK or store imports, so all of it is unit-testable. */
+
+export type ExpenseStatus = "PENDING_REVIEW" | "DEFERRED" | "APPROVED" | "EXCLUDED";
+
+export interface ExpenseRevision {
+  revisedAt: string;
+  changes: {
+    originalAmount?: { from: number; to: number };
+    merchantName?: { from: string; to: string };
+  };
+  /** The bank withdrew this posted transaction after it was approved. */
+  removedByBank?: boolean;
+}
+
+export interface ExpenseTransaction {
+  transactionId: string;
+  status: ExpenseStatus;
+  merchantName: string;
+  originalAmount: number;
+  /** YYYY-MM-DD, the calendar day spending is counted on. */
+  date: string;
+  categoryId?: string | null;
+  accountId: string;
+  accountMask?: string | null;
+  institutionName: string;
+  notes?: string | null;
+  isSubscription?: boolean;
+  isPending: boolean;
+  pendingTransactionId?: string;
+  reviewedAt?: string;
+  importedAt: string;
+  updatedAt: string;
+  revision?: ExpenseRevision;
+  /** Set when the sync excluded this itself (card payment, own-account transfer). */
+  autoExcluded?: boolean;
+  /**
+   * What the bank last reported, kept apart from the editable fields above so
+   * a bank update never overwrites a hand-edited amount, merchant, or date.
+   * Absent on rows migrated from the original app and on manual entries.
+   */
+  bankAmount?: number;
+  bankMerchant?: string;
+  bankDate?: string;
+}
+
+export interface ExpenseCategory {
+  categoryId: string;
+  name: string;
+  color: string;
+  isDefault?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** One bank transaction, provider-agnostic. Positive amount = money out. */
+export interface BankTransaction {
+  transactionId: string;
+  pendingTransactionId: string | null;
+  accountId: string;
+  amount: number;
+  merchant: string;
+  date: string;
+  pending: boolean;
+  categoryDetailed: string | null;
+}
+
+export interface BankAccount {
+  accountId: string;
+  name: string;
+  mask: string | null;
+  type: string;
+  subtype: string | null;
+}
+
+export interface BankChanges {
+  added: BankTransaction[];
+  modified: BankTransaction[];
+  removed: string[];
+}
+
+export type ExpenseOp =
+  | { kind: "insert"; row: ExpenseTransaction }
+  | { kind: "update"; row: ExpenseTransaction; previousUpdatedAt: string }
+  | { kind: "rekey"; oldId: string; row: ExpenseTransaction; previousUpdatedAt: string }
+  | { kind: "delete"; id: string; previousUpdatedAt: string };
+
+/** History before this day was reviewed in the original app and is closed: sync never adds, changes, or removes it. */
+export const EXPENSES_SYNC_FROM = "2026-11-01";
+
+/** Money moving between the owner's own accounts; the spending itself is already counted on the card. */
+const OWN_TRANSFER_CATEGORIES = new Set([
+  "LOAN_PAYMENTS_CREDIT_CARD_PAYMENT",
+  "TRANSFER_OUT_INVESTMENT_AND_RETIREMENT_FUNDS",
+  "TRANSFER_OUT_SAVINGS",
+  "TRANSFER_OUT_ACCOUNT_TRANSFER",
+]);
+
+export function isFrozen(row: ExpenseTransaction): boolean {
+  return (row.bankDate ?? row.date) < EXPENSES_SYNC_FROM;
+}
+
+export function planExpenseSync(
+  existing: ExpenseTransaction[],
+  changes: BankChanges,
+  accounts: BankAccount[],
+  institutionName: string,
+  now: string
+): ExpenseOp[] {
+  const rows = new Map(existing.map((r) => [r.transactionId, r]));
+  const accountById = new Map(accounts.map((a) => [a.accountId, a]));
+  const ops: ExpenseOp[] = [];
+
+  function fresh(txn: BankTransaction): ExpenseTransaction {
+    const account = accountById.get(txn.accountId);
+    const ownTransfer =
+      account?.type === "depository" && txn.categoryDetailed !== null && OWN_TRANSFER_CATEGORIES.has(txn.categoryDetailed);
+    return {
+      transactionId: txn.transactionId,
+      status: ownTransfer ? "EXCLUDED" : "PENDING_REVIEW",
+      ...(ownTransfer ? { autoExcluded: true } : {}),
+      merchantName: txn.merchant,
+      originalAmount: txn.amount,
+      date: txn.date,
+      accountId: txn.accountId,
+      accountMask: account?.mask ?? null,
+      institutionName,
+      isPending: txn.pending,
+      importedAt: now,
+      updatedAt: now,
+      bankAmount: txn.amount,
+      bankMerchant: txn.merchant,
+      bankDate: txn.date,
+    };
+  }
+
+  function absorb(row: ExpenseTransaction, incoming: BankTransaction): ExpenseTransaction {
+    // A late date correction must not move an open transaction into closed history.
+    const txn =
+      incoming.date < EXPENSES_SYNC_FROM ? { ...incoming, date: row.bankDate ?? row.date } : incoming;
+    const next: ExpenseTransaction = {
+      ...row,
+      transactionId: txn.transactionId,
+      accountId: txn.accountId,
+      accountMask: accountById.get(txn.accountId)?.mask ?? row.accountMask ?? null,
+      isPending: txn.pending,
+      updatedAt: now,
+      bankAmount: txn.amount,
+      bankMerchant: txn.merchant,
+      bankDate: txn.date,
+    };
+    const amountChanged = txn.amount !== row.bankAmount;
+    const merchantChanged = txn.merchant !== row.bankMerchant;
+    const merchantEdited = row.merchantName !== row.bankMerchant;
+    const dateEdited = row.date !== row.bankDate;
+    if (!dateEdited) next.date = txn.date;
+    if (amountChanged) next.originalAmount = txn.amount;
+    if (merchantChanged && !merchantEdited) next.merchantName = txn.merchant;
+
+    const reviewed = row.status === "APPROVED" || row.revision !== undefined;
+    if (reviewed && row.status !== "EXCLUDED") {
+      const prior = row.revision?.changes;
+      const amountBase = prior?.originalAmount?.from ?? row.originalAmount;
+      const merchantBase = prior?.merchantName?.from ?? row.merchantName;
+      const revised: ExpenseRevision["changes"] = {};
+      if (next.originalAmount !== amountBase) revised.originalAmount = { from: amountBase, to: next.originalAmount };
+      if (next.merchantName !== merchantBase) revised.merchantName = { from: merchantBase, to: next.merchantName };
+      if (Object.keys(revised).length > 0) {
+        next.status = row.status === "DEFERRED" ? "DEFERRED" : "PENDING_REVIEW";
+        next.revision = { revisedAt: now, changes: revised };
+      } else {
+        next.status = "APPROVED";
+        delete next.revision;
+      }
+    }
+    return next;
+  }
+
+  function replace(row: ExpenseTransaction, next: ExpenseTransaction) {
+    const previousUpdatedAt = row.updatedAt;
+    if (row.transactionId === next.transactionId) {
+      ops.push({ kind: "update", row: next, previousUpdatedAt });
+    } else {
+      ops.push({ kind: "rekey", oldId: row.transactionId, row: next, previousUpdatedAt });
+      rows.delete(row.transactionId);
+    }
+    rows.set(next.transactionId, next);
+  }
+
+  // Re-linking a bank re-issues every transaction under new ids. The same
+  // account (mask) with the same bank date and amount under a different
+  // account id is that transaction, so its review is carried over.
+  function findRelinked(txn: BankTransaction): ExpenseTransaction | undefined {
+    const mask = accountById.get(txn.accountId)?.mask;
+    if (!mask) return undefined;
+    for (const row of rows.values()) {
+      if (
+        row.accountMask === mask &&
+        row.institutionName === institutionName &&
+        row.accountId !== txn.accountId &&
+        row.bankDate === txn.date &&
+        row.bankAmount === txn.amount &&
+        !isFrozen(row)
+      ) {
+        return row;
+      }
+    }
+    return undefined;
+  }
+
+  function add(txn: BankTransaction) {
+    const known = rows.get(txn.transactionId);
+    if (known) {
+      modify(known, txn);
+      return;
+    }
+    const pendingRow = txn.pendingTransactionId ? rows.get(txn.pendingTransactionId) : undefined;
+    if (pendingRow) {
+      if (!isFrozen(pendingRow)) replace(pendingRow, absorb(pendingRow, txn));
+      return;
+    }
+    if (txn.date < EXPENSES_SYNC_FROM || txn.amount <= 0) return;
+    const relinked = findRelinked(txn);
+    if (relinked) {
+      replace(relinked, absorb(relinked, txn));
+      return;
+    }
+    const row = fresh(txn);
+    ops.push({ kind: "insert", row });
+    rows.set(row.transactionId, row);
+  }
+
+  function modify(row: ExpenseTransaction, txn: BankTransaction) {
+    if (isFrozen(row)) return;
+    const unchanged =
+      row.bankAmount === txn.amount &&
+      row.bankMerchant === txn.merchant &&
+      row.bankDate === txn.date &&
+      row.isPending === txn.pending;
+    if (!unchanged) replace(row, absorb(row, txn));
+  }
+
+  for (const txn of changes.added) add(txn);
+  for (const txn of changes.modified) add(txn);
+  for (const id of changes.removed) {
+    const row = rows.get(id);
+    if (!row || isFrozen(row) || row.status === "EXCLUDED") continue;
+    if (row.status === "APPROVED" && !row.isPending) {
+      replace(row, {
+        ...row,
+        status: "PENDING_REVIEW",
+        revision: { revisedAt: now, changes: {}, removedByBank: true },
+        updatedAt: now,
+      });
+    } else {
+      ops.push({ kind: "delete", id, previousUpdatedAt: row.updatedAt });
+      rows.delete(id);
+    }
+  }
+  return ops;
+}
+
+/** Accounts seen on an earlier sync that the bank no longer shares. Matched by type + mask: ids can change on re-link. */
+export function findMissingAccounts(known: BankAccount[], live: BankAccount[]): BankAccount[] {
+  const key = (a: BankAccount) => `${a.type}|${a.mask}`;
+  const liveKeys = new Set(live.map(key));
+  return known.filter((a) => !liveKeys.has(key(a)));
+}
+
+/** Everything ever shared, with live details winning. */
+export function mergeKnownAccounts(known: BankAccount[], live: BankAccount[]): BankAccount[] {
+  return [...live, ...findMissingAccounts(known, live)];
+}
+
+export function monthOf(date: string): string {
+  return date.slice(0, 7);
+}
+
+export function shiftMonth(month: string, by: number): string {
+  const [y, m] = month.split("-").map(Number);
+  const index = y * 12 + (m - 1) + by;
+  return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`;
+}
+
+export function daysInMonth(month: string): number {
+  const [y, m] = month.split("-").map(Number);
+  return new Date(Date.UTC(y, m, 0)).getUTCDate();
+}
+
+export interface MonthSummary {
+  total: number;
+  count: number;
+  perDay: number;
+  byCategory: Array<{ categoryId: string | null; amount: number }>;
+}
+
+export function summarizeMonth(transactions: ExpenseTransaction[], month: string): MonthSummary {
+  const approved = transactions.filter((t) => t.status === "APPROVED" && monthOf(t.date) === month);
+  const total = approved.reduce((sum, t) => sum + t.originalAmount, 0);
+  const amounts = new Map<string | null, number>();
+  for (const t of approved) {
+    const key = t.categoryId ?? null;
+    amounts.set(key, (amounts.get(key) ?? 0) + t.originalAmount);
+  }
+  return {
+    total,
+    count: approved.length,
+    perDay: total / daysInMonth(month),
+    byCategory: [...amounts].map(([categoryId, amount]) => ({ categoryId, amount })).sort((a, b) => b.amount - a.amount),
+  };
+}

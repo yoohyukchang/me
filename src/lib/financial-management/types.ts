@@ -1,3 +1,5 @@
+import type { BankAccount } from "./expenses";
+
 export type Currency = "USD" | "KRW";
 
 /** Sentinel categoryId for a holding with no row in `FinancialHoldingsAssignments` — computed at read time, never stored. */
@@ -34,9 +36,18 @@ export interface PlaidItem {
   /** investment_transaction_id -> quantity already folded into vestedSharesByAccount. */
   vestedSharesLedger: Record<string, number>;
   createdAt: string;
+  /** Expense sync state, `transactions`-product Items only. Absent until the first expense sync. */
+  transactionsCursor?: string;
+  knownAccounts?: BankAccount[];
+  /** Accounts shared before that the bank has stopped sharing — their transactions silently stop. */
+  missingAccounts?: BankAccount[];
+  lastExpenseSyncAt?: string;
+  expenseSyncError?: string | null;
+  /** Epoch ms until which a running expense sync holds this Item. */
+  expenseSyncLockUntil?: number;
 }
 
-export type PublicPlaidItem = Omit<PlaidItem, "accessToken">;
+export type PublicPlaidItem = Omit<PlaidItem, "accessToken" | "transactionsCursor" | "expenseSyncLockUntil">;
 
 export interface Security {
   securityId: string;

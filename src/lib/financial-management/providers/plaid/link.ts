@@ -16,7 +16,10 @@ export async function createLinkToken(options: {
     user: { client_user_id: USER_ID },
     webhook: options.webhookUrl,
     ...(options.updateAccessToken
-      ? { access_token: options.updateAccessToken }
+      ? {
+          access_token: options.updateAccessToken,
+          ...(options.product === "transactions" ? { update: { account_selection_enabled: true } } : {}),
+        }
       : {
           products: [
             options.product === "investments"

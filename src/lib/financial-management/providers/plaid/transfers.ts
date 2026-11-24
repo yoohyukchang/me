@@ -12,6 +12,7 @@ export const plaidBalanceProvider: BalanceProvider = {
     return response.accounts.map((account) => ({
       accountId: account.account_id,
       name: account.name,
+      type: account.type,
       subtype: account.subtype,
       current: account.balances.current ?? 0,
     }));
@@ -19,6 +20,7 @@ export const plaidBalanceProvider: BalanceProvider = {
 
   async fetchBalance(accessToken) {
     const balances = await this.fetchAccountBalances(accessToken);
-    return balances.reduce((sum, b) => sum + b.current, 0);
+    // A bank Item can also carry credit cards, whose balance is debt owed.
+    return balances.filter((b) => b.type === "depository").reduce((sum, b) => sum + b.current, 0);
   },
 };

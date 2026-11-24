@@ -241,6 +241,38 @@ reconciling the two, so it's visible that categorized + uncategorized
 sums to everything you own. Each view has its own pie, since each view has
 its own categorization.
 
+## Expenses
+
+Card and checking spending, reviewed by hand (category, then Confirm /
+Defer / Exclude). Moved here in November 2026 from a standalone app.
+
+- `expenses.ts`: types and the pure rules. `planExpenseSync()` turns bank
+  changes into ledger writes, `summarizeMonth()` computes totals.
+- `integrator/expense-sync.ts`: `/transactions/sync` per bank Item (not
+  billed per call). Runs on the webhook, when the tab opens, and daily in the
+  Lambda. A 90s lock on the Item keeps runs from overlapping.
+- `FinancialExpenseTransactions` (`transactionId`) and
+  `FinancialExpenseCategories` (`categoryId`): PITR + deletion protection.
+
+Rules that aren't obvious from the code:
+
+- **Everything before 2026-11-01 (`EXPENSES_SYNC_FROM`) is closed.** Those 313
+  rows were migrated verbatim; sync never adds, changes, or removes there.
+- **One Item per bank, with every account selected.** After Chase and BofA
+  were linked again with only checking selected, the older Items stopped
+  returning their credit cards, with no error. Linking Chase once more also
+  left the previous Item in `ITEM_LOGIN_REQUIRED`. Hence the 409 in
+  `plaid/exchange` and the `missingAccounts` warning. "No sync errors" does
+  not mean data is flowing: compare `/accounts/get` with `knownAccounts`.
+- `bankAmount`/`bankMerchant`/`bankDate` hold what the bank said; the plain
+  fields are the owner's and are often edited (splits, rent month).
+- Excluding keeps the row, so a re-link can't bring it back.
+- Card payments and own-account transfers are auto-excluded; refunds are
+  ignored (the owner adjusts by hand).
+- Dates are calendar strings; never put them through `new Date()` for month
+  math (the old app misfiled every 1st of the month in Pacific time).
+- Net Worth counts depository accounts only; card balances are ignored.
+
 ## Schedule & failure handling
 
 EventBridge Scheduler (not a plain cron Rule — it has a native retry

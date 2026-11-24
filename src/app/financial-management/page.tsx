@@ -3,17 +3,19 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import ConnectionsStatus from "@/components/financial-management/connections-status";
+import ExpensesTab from "@/components/financial-management/expenses-tab";
 import HoldingsTab from "@/components/financial-management/holdings-tab";
 import HistoryTab from "@/components/financial-management/history-tab";
 import NetWorthTab from "@/components/financial-management/net-worth-tab";
 import { apiRequest } from "@/lib/financial-management/client";
 
-type TabId = "holdings" | "history" | "net-worth";
+type TabId = "holdings" | "history" | "net-worth" | "expenses";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "holdings", label: "Portfolio Holdings" },
   { id: "history", label: "Portfolio History" },
   { id: "net-worth", label: "Net Worth" },
+  { id: "expenses", label: "Expenses" },
 ];
 
 export default function FinancialManagementPage() {
@@ -68,6 +70,7 @@ export default function FinancialManagementPage() {
 
         {activeTab === "holdings" && <HoldingsTab dataVersion={dataVersion} />}
         {activeTab === "history" && <HistoryTab dataVersion={dataVersion} />}
+        {activeTab === "expenses" && <ExpensesTab dataVersion={dataVersion} />}
         <div hidden={activeTab !== "net-worth"}>
           <NetWorthTab dataVersion={dataVersion} />
         </div>

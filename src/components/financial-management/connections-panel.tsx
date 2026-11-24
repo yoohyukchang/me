@@ -25,14 +25,14 @@ function ConnectButton({
 
   const { open, ready } = usePlaidLink({
     token: linkToken,
-    onSuccess: async (publicToken) => {
+    onSuccess: async (publicToken, metadata) => {
       try {
         if (updateItemId) {
           await apiRequest("/api/financial-management/plaid/resync", { method: "POST" });
         } else {
           await apiRequest("/api/financial-management/plaid/exchange", {
             method: "POST",
-            body: JSON.stringify({ publicToken, product }),
+            body: JSON.stringify({ publicToken, product, institutionId: metadata.institution?.institution_id }),
           });
         }
         onDone();
@@ -153,7 +153,7 @@ export default function ConnectionsPanel({
                       synced {formatRelativeTime(item.lastSyncedAt)}
                     </span>
                     <ConnectButton
-                      label="Add account"
+                      label={item.product === "transactions" ? "Manage accounts" : "Add account"}
                       product={item.product}
                       updateItemId={item.itemId}
                       onDone={onChanged}
@@ -168,6 +168,20 @@ export default function ConnectionsPanel({
                   />
                 )}
               </div>
+              {item.product === "transactions" && item.knownAccounts && (
+                <p className="mt-1 pl-5 text-xs text-gray-400">
+                  {item.knownAccounts.map((account, i) => {
+                    const missing = item.missingAccounts?.some((m) => m.accountId === account.accountId);
+                    return (
+                      <span key={account.accountId} className={missing ? "text-amber-600" : undefined}>
+                        {i > 0 && ", "}
+                        {account.name} ••{account.mask}
+                        {missing && " (not shared)"}
+                      </span>
+                    );
+                  })}
+                </p>
+              )}
               <div className="mt-1 flex justify-end">
                 <DisconnectButton itemId={item.itemId} onDone={onChanged} />
               </div>

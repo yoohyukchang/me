@@ -24,6 +24,10 @@ export async function listPublicPlaidItems(): Promise<PublicPlaidItem[]> {
     vestedSharesByAccount: item.vestedSharesByAccount,
     vestedSharesLedger: item.vestedSharesLedger,
     createdAt: item.createdAt,
+    knownAccounts: item.knownAccounts,
+    missingAccounts: item.missingAccounts,
+    lastExpenseSyncAt: item.lastExpenseSyncAt,
+    expenseSyncError: item.expenseSyncError,
   }));
 }
 
@@ -123,4 +127,63 @@ export async function markLoginRequired(itemId: string): Promise<void> {
 
 export async function deletePlaidItem(itemId: string): Promise<void> {
   await docClient.send(new DeleteCommand({ TableName: PLAID_ITEMS_TABLE, Key: { itemId } }));
+}
+
+const EXPENSE_SYNC_LOCK_MS = 90_000;
+
+/** Takes the Item for one expense sync, or returns undefined if another run holds it (or it's gone). */
+export async function claimExpenseSync(itemId: string): Promise<PlaidItem | undefined> {
+  const now = Date.now();
+  try {
+    const result = await docClient.send(
+      new UpdateCommand({
+        TableName: PLAID_ITEMS_TABLE,
+        Key: { itemId },
+        UpdateExpression: "SET expenseSyncLockUntil = :until",
+        ConditionExpression:
+          "attribute_exists(itemId) AND #product = :transactions AND (attribute_not_exists(expenseSyncLockUntil) OR expenseSyncLockUntil < :now)",
+        ExpressionAttributeNames: { "#product": "product" },
+        ExpressionAttributeValues: { ":until": now + EXPENSE_SYNC_LOCK_MS, ":now": now, ":transactions": "transactions" },
+        ReturnValues: "ALL_NEW",
+      })
+    );
+    return result.Attributes as PlaidItem;
+  } catch (error) {
+    if ((error as Error).name === "ConditionalCheckFailedException") return undefined;
+    throw error;
+  }
+}
+
+export async function recordExpenseSyncSuccess(
+  itemId: string,
+  update: Required<Pick<PlaidItem, "transactionsCursor" | "knownAccounts" | "missingAccounts">>
+): Promise<void> {
+  await docClient.send(
+    new UpdateCommand({
+      TableName: PLAID_ITEMS_TABLE,
+      Key: { itemId },
+      UpdateExpression:
+        "SET transactionsCursor = :cursor, knownAccounts = :known, missingAccounts = :missing, lastExpenseSyncAt = :at, expenseSyncError = :none REMOVE expenseSyncLockUntil",
+      ConditionExpression: "attribute_exists(itemId)",
+      ExpressionAttributeValues: {
+        ":cursor": update.transactionsCursor,
+        ":known": update.knownAccounts,
+        ":missing": update.missingAccounts,
+        ":at": new Date().toISOString(),
+        ":none": null,
+      },
+    })
+  );
+}
+
+export async function recordExpenseSyncFailure(itemId: string, error: string): Promise<void> {
+  await docClient.send(
+    new UpdateCommand({
+      TableName: PLAID_ITEMS_TABLE,
+      Key: { itemId },
+      UpdateExpression: "SET expenseSyncError = :error REMOVE expenseSyncLockUntil",
+      ConditionExpression: "attribute_exists(itemId)",
+      ExpressionAttributeValues: { ":error": error },
+    })
+  );
 }
