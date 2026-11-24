@@ -30,6 +30,7 @@ export class FinancialManagementStack extends cdk.Stack {
     // encryption the other tables use.
     const plaidItemsKey = new kms.Key(this, "PlaidItemsKey", {
       description: "Encrypts FinancialPlaidItems (Plaid access tokens)",
+      alias: "financial-management-plaid-items",
       enableKeyRotation: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
@@ -187,6 +188,7 @@ export class FinancialManagementStack extends cdk.Stack {
     // the weekly run refreshes holdings and records History/Net Worth; the
     // other six days only refresh holdings.
     const schedulerRole = new iam.Role(this, "SchedulerRole", {
+      roleName: "financial-management-scheduler",
       assumedBy: new iam.ServicePrincipal("scheduler.amazonaws.com"),
     });
     syncFunction.grantInvoke(schedulerRole);
@@ -221,6 +223,15 @@ export class FinancialManagementStack extends cdk.Stack {
     });
     for (const table of tables) table.grantReadWriteData(appUser);
     plaidItemsKey.grantEncryptDecrypt(appUser);
+
+    // CDK would otherwise generate these names with a random suffix.
+    (syncFunction.role!.node.defaultChild as iam.CfnRole).roleName = "financial-management-sync";
+    const namePolicy = (grantee: Construct, policyName: string) => {
+      (grantee.node.findChild("DefaultPolicy").node.defaultChild as iam.CfnPolicy).policyName = policyName;
+    };
+    namePolicy(syncFunction.role!, "financial-management-sync");
+    namePolicy(schedulerRole, "financial-management-scheduler");
+    namePolicy(appUser, "financial-management-app");
 
     new cdk.CfnOutput(this, "AppUserName", { value: appUser.userName });
     new cdk.CfnOutput(this, "SyncFunctionName", { value: syncFunction.functionName });
