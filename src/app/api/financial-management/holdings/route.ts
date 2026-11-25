@@ -15,15 +15,17 @@ export async function GET() {
 
   const { holdings, totalValueUsd } = toUnifiedHoldings(snapshot ?? null, manualHoldings, usdKrwRate);
 
-  const pricesAsOf =
-    snapshot?.holdings
-      .map((h) => h.institutionPriceAsOf)
-      .filter((d): d is string => !!d)
-      .sort()
-      .at(-1) ?? null;
+  // The oldest, so the label never claims a fresher date than any row has.
+  const pricesAsOf = holdings.flatMap((h) => h.closeDate ?? []).sort()[0] ?? null;
 
   return NextResponse.json(
-    { holdings, totalValueUsd, lastSyncedAt: snapshot?.lastSyncedAt ?? null, pricesAsOf },
+    {
+      holdings,
+      totalValueUsd,
+      lastSyncedAt: snapshot?.lastSyncedAt ?? null,
+      pricesAsOf,
+      positionsUpdatedAt: snapshot?.positionsUpdatedAt ?? null,
+    },
     { headers: { "Cache-Control": "no-store" } }
   );
 }

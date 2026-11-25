@@ -33,7 +33,7 @@ function shiftDays(date: string, days: number): string {
 export async function syncItem(item: PlaidItem): Promise<void> {
   try {
     if (item.product === "investments") {
-      const { accounts, holdings, securities } = await plaidHoldingsProvider.fetchHoldings(
+      const { accounts, holdings, securities, positionsUpdatedAt } = await plaidHoldingsProvider.fetchHoldings(
         item.accessToken
       );
 
@@ -71,6 +71,7 @@ export async function syncItem(item: PlaidItem): Promise<void> {
         securities,
         totalValue,
         lastSyncedAt: new Date().toISOString(),
+        positionsUpdatedAt,
       });
 
       // Deposits, withdrawals, and 401(k) contributions are the contribution

@@ -55,3 +55,45 @@ test("a null snapshot (no Plaid connection yet) still returns manual holdings", 
   assert.equal(holdings.length, 1);
   assert.equal(totalValueUsd, 400);
 });
+
+function priced(security, holding = {}) {
+  return toUnifiedHoldings(
+    {
+      ...snapshot,
+      holdings: [{ ...snapshot.holdings[0], institutionPriceAsOf: "2026-11-24", ...holding }],
+      securities: [{ ...snapshot.securities[0], ...security }],
+    },
+    [],
+    0
+  ).holdings[0];
+}
+
+test("a holding is priced at the market close when there is one", () => {
+  const row = priced({ closePrice: 110, closePriceAsOf: "2026-11-24" });
+  assert.equal(row.price, 110);
+  assert.ok(Math.abs(row.valueUsd - 1100) < 1e-9);
+  assert.equal(row.closeDate, "2026-11-24");
+});
+
+test("no close, an old close, or a split-sized gap falls back to the institution's price", () => {
+  for (const security of [
+    { closePrice: null, closePriceAsOf: null },
+    { closePrice: 110, closePriceAsOf: "2026-11-19" },
+    { closePrice: 10, closePriceAsOf: "2026-11-24" },
+    { closePrice: 1000, closePriceAsOf: "2026-11-24" },
+  ]) {
+    const row = priced(security);
+    assert.equal(row.price, 100);
+    assert.equal(row.valueUsd, 1000);
+    assert.equal(row.closeDate, null);
+  }
+});
+
+test("a close over a long weekend still counts", () => {
+  assert.equal(priced({ closePrice: 110, closePriceAsOf: "2026-11-20" }).price, 110);
+});
+
+test("cash and a stock plan's unvested share aren't repriced into value", () => {
+  assert.equal(priced({ isCashEquivalent: true, closePrice: 2, closePriceAsOf: "2026-11-24" }, { institutionPrice: 1 }).valueUsd, 1000);
+  assert.equal(priced({ closePrice: 110, closePriceAsOf: "2026-11-24" }, { institutionValue: 0 }).valueUsd, 0);
+});

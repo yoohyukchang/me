@@ -28,6 +28,7 @@ export default function HoldingsTab({ dataVersion }: { dataVersion: number }) {
   const [holdingRows, setHoldingRows] = useState<UnifiedHolding[]>([]);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [pricesAsOf, setPricesAsOf] = useState<string | null>(null);
+  const [positionsUpdatedAt, setPositionsUpdatedAt] = useState<string | null>(null);
   const [manualHoldings, setManualHoldings] = useState<ManualHolding[]>([]);
   const [manualForm, setManualForm] = useState<"closed" | "new" | ManualHolding>("closed");
   const [views, setViews] = useState<View[]>([]);
@@ -44,6 +45,7 @@ export default function HoldingsTab({ dataVersion }: { dataVersion: number }) {
     setHoldingRows(holdingsData.holdings);
     setLastSyncedAt(holdingsData.lastSyncedAt);
     setPricesAsOf(holdingsData.pricesAsOf);
+    setPositionsUpdatedAt(holdingsData.positionsUpdatedAt);
     setManualHoldings(manualData.holdings);
 
     let viewList: View[] = viewsData.views;
@@ -255,9 +257,11 @@ export default function HoldingsTab({ dataVersion }: { dataVersion: number }) {
       <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 md:p-8 mb-8">
         <div className="flex items-center justify-end mb-6">
           <span className="text-xs text-gray-400">
-            Last synced {formatRelativeTime(lastSyncedAt)}
             {pricesAsOf &&
-              ` · Prices as of ${new Date(`${pricesAsOf}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+              `Prices: ${new Date(`${pricesAsOf}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })} close · `}
+            {positionsUpdatedAt &&
+              `Positions as of ${new Date(positionsUpdatedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} · `}
+            Synced {formatRelativeTime(lastSyncedAt)}
           </span>
         </div>
         <HoldingsPieChart slices={slices} totalValue={totalValue} uncategorizedTotal={uncategorizedTotal} />

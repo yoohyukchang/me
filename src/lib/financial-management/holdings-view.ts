@@ -1,11 +1,37 @@
-import { toUsd, type HoldingsSnapshot, type ManualHolding, type UnifiedHolding } from "./types";
+import { toUsd, type Holding, type HoldingsSnapshot, type ManualHolding, type Security, type UnifiedHolding } from "./types";
+
+const MAX_CLOSE_AGE_DAYS = 4; // a long weekend
+const MAX_PRICE_RATIO = 2;
 
 /**
- * Merges Plaid's holdings (read-only, synced weekly) with manually-entered
+ * The security's market close, when it's safe to price this holding with it.
+ * Plaid's `institution_price` runs a close behind while `institution_price_as_of`
+ * says today, so the close is preferred. Not when it's old, or so far from the
+ * institution's price that a split has probably reached only one of them.
+ */
+function usableClose(holding: Holding, security: Security | undefined): { price: number; date: string } | null {
+  const price = security?.closePrice;
+  const date = security?.closePriceAsOf;
+  if (!security || security.isCashEquivalent || !price || !date || holding.institutionPrice <= 0) return null;
+  if (holding.institutionPriceAsOf) {
+    const ageDays = (Date.parse(holding.institutionPriceAsOf) - Date.parse(date)) / 86_400_000;
+    if (ageDays > MAX_CLOSE_AGE_DAYS) return null;
+  }
+  const ratio = price / holding.institutionPrice;
+  if (ratio > MAX_PRICE_RATIO || ratio < 1 / MAX_PRICE_RATIO) return null;
+  return { price, date };
+}
+
+/**
+ * Merges Plaid's holdings (read-only, synced automatically) with manually-entered
  * holdings (any account Plaid can't reach — a Korean brokerage, for
  * example) into one provider-agnostic list. This is the only place that
  * needs to know both shapes exist; everything downstream (Views,
  * categorization, the pie chart, Portfolio Value) just sees `UnifiedHolding`.
+ *
+ * Closes are applied here, for display, never in the stored snapshot: cash is
+ * derived from the institution's own balance and prices, and mixing in a
+ * different close would distort it.
  */
 export function toUnifiedHoldings(
   snapshot: Pick<HoldingsSnapshot, "accounts" | "holdings" | "securities"> | null,
@@ -20,6 +46,9 @@ export function toUnifiedHoldings(
     for (const holding of snapshot.holdings) {
       const security = securityById.get(holding.securityId);
       const account = accountById.get(holding.accountId);
+      const close = usableClose(holding, security);
+      // Scaled rather than quantity × close, to keep a stock plan's vested share.
+      const value = close ? holding.institutionValue * (close.price / holding.institutionPrice) : holding.institutionValue;
       holdings.push({
         holdingKey: holding.securityId,
         source: "plaid",
@@ -27,10 +56,11 @@ export function toUnifiedHoldings(
         name: security?.name ?? holding.securityId,
         accountName: account?.name ?? "Fidelity",
         quantity: holding.quantity,
-        price: holding.institutionPrice,
-        value: holding.institutionValue,
+        price: close?.price ?? holding.institutionPrice,
+        value,
         currency: "USD",
-        valueUsd: holding.institutionValue,
+        valueUsd: value,
+        closeDate: close?.date ?? null,
       });
     }
   }
@@ -48,6 +78,7 @@ export function toUnifiedHoldings(
       value,
       currency: manual.currency,
       valueUsd: toUsd(value, manual.currency, usdKrwRate),
+      closeDate: null,
     });
   }
 

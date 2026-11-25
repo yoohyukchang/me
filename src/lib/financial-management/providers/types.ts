@@ -11,6 +11,7 @@ export interface HoldingsProvider {
     accounts: Account[];
     holdings: Holding[];
     securities: Security[];
+    positionsUpdatedAt: string | null;
   }>;
 }
 

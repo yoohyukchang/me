@@ -197,6 +197,8 @@ export class FinancialManagementStack extends cdk.Stack {
     const schedules = [
       { id: "WeeklySyncSchedule", name: "financial-management-weekly-sync", cron: "cron(0 15 ? * SAT *)", timezone: "America/Los_Angeles", mode: "weekly" },
       { id: "DailyHoldingsSchedule", name: "financial-management-daily-holdings", cron: "cron(0 13 ? * SUN-FRI *)", timezone: "UTC", mode: "daily" },
+      // That day's market closes; seen in Plaid by 8:40pm Pacific.
+      { id: "EveningHoldingsSchedule", name: "financial-management-evening-holdings", cron: "cron(0 21 ? * MON-FRI *)", timezone: "America/Los_Angeles", mode: "daily" },
     ];
     for (const s of schedules) {
       new scheduler.CfnSchedule(this, s.id, {

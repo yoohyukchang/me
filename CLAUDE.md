@@ -56,6 +56,8 @@ comments, docs, and commit messages in English.
 - Expenses before 2026-11-01 are closed to the sync. After touching that code
   or data, check that August–October totals still match the design doc.
 - Expense months are string math on `YYYY-MM-DD`; never `new Date(date)`.
+- Plaid's `institution_price_as_of` is the update date, not the price date; use
+  `close_price`/`close_price_as_of` for market prices.
 - Nothing is auto-excluded from expense review, by the owner's choice.
 
 - `/investments/holdings/get` is Plaid's cached extraction; its prices can

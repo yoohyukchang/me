@@ -87,7 +87,7 @@ Two different Plaid endpoints feed it, on purpose:
 
 | Where | Endpoint | Freshness |
 |---|---|---|
-| Portfolio Holdings tab (per-security rows, pie chart) | `/investments/holdings/get` | Plaid's cached daily extraction; prices can lag Fidelity by ~1 trading day. The tab shows "Prices as of" from `institution_price_as_of`. Not billed per call. |
+| Portfolio Holdings tab (per-security rows, pie chart) | `/investments/holdings/get` | Quantities and cash as of Plaid's last update; prices at the latest market close when there is one (below). Not billed per call. |
 | Portfolio History / Net Worth (Saturday) | `/accounts/balance/get` → `balances.current` per account | Fidelity's latest published close, fetched at call time. Billed per call, so only the weekly run uses it. |
 
 So the Holdings tab total and the latest History value can differ slightly;
@@ -137,6 +137,28 @@ shown stay Plaid's real numbers; only the counted value changes.
 report a stock-plan account's `subtype` as plain `"brokerage"` for a
 newly-linked Item before its backend extraction settles, so the name match
 is the reliable signal.
+
+### Prices on the Holdings tab
+
+`/investments/holdings/get` returns two prices. `institution_price` is the
+institution's and runs a close behind, while its `institution_price_as_of`
+says the update date (on 2026-11-24 it held 11-23 closes labelled 11-24).
+`close_price` on the security, with `close_price_as_of`, matched the public
+11-24 close for all ten brokerage positions that evening. So
+`toUnifiedHoldings` prices a row at `close_price`, scaling the institution's
+value to keep a stock plan's vested share.
+
+- It falls back to the institution's price when there is no close (401(k)
+  funds, RSU), when the close is more than 4 days older than the institution's
+  date, or when the two differ by more than 2× (a split that reached only one).
+- Applied at read time only. The stored snapshot keeps the institution's
+  values, which cash reconciliation, History, and Net Worth use, so the tab's
+  total intentionally differs from the Fidelity balance until the next update.
+- The tab shows the close date and `positionsUpdatedAt` (`/item/get`'s last
+  successful update, not our sync time). Trades appear only after that.
+- Closes are only as fresh as the last sync, hence the weekday 9pm Pacific run.
+  They were in Plaid by 8:40pm on 2026-11-24; the exact time, and whether a
+  webhook follows, hasn't been measured.
 
 ## Contributions
 
@@ -326,7 +348,8 @@ different account selection can invalidate the first); BofA behaved the same.
 
 EventBridge Scheduler (not a plain cron Rule — it has a native retry
 policy) invokes `financial-management-sync` with `{"mode":"daily"}` at 13:00
-UTC Sunday–Friday (refresh the holdings snapshot), and with
+UTC Sunday–Friday and at 9pm `America/Los_Angeles` Monday–Friday (refresh the
+holdings snapshot; the evening run picks up that day's closes), and with
 `{"mode":"weekly"}` on Saturday at 3pm `America/Los_Angeles` (sync every Item,
 then record Portfolio History and Net Worth). Rows are dated in UTC, so a
 weekly retry after midnight UTC (4pm PST / 5pm PDT) would be dated Sunday.
@@ -368,8 +391,8 @@ total. So `runWeeklySnapshot()` values each investment account at
 `/accounts/balance/get`'s `current` instead (billed per call, so only
 once a week). A stock-plan account's live balance includes unvested
 shares, so it's scaled by the counted/full value ratio the holdings sync
-applied. The Portfolio Holdings tab keeps the cached prices and shows
-their "Prices as of" date.
+applied. The Portfolio Holdings tab is priced separately; see
+[Prices on the Holdings tab](#prices-on-the-holdings-tab).
 
 ## Secrets
 
@@ -509,17 +532,15 @@ netted account total.
 
 - **Fidelity data lags about a trading day.** Plaid didn't update at all on
   Monday 2026-11-23; the next update came 11-24 08:36 PT and matched the
-  Fidelity app's 11-23 close to the cent, so no Reconnect was needed. Prices
-  labelled 11-24 were 11-23 closes: "Prices as of" is the update date, not the
-  price date. Trades show only after Plaid's next update (the 11-20 buys
+  Fidelity app's 11-23 close to the cent, so no Reconnect was needed. Trades show only after Plaid's next update (the 11-20 buys
   appeared on 11-24).
 - **`balances.available` is not the cash to show.** On 2026-11-21 it read
   $24,830.22 while $7,601.01 of Friday buys were unsettled; actual cash was
   $17,229.21 (the balance minus all positions at the close). Cash is
   `balances.current − itemized holdings`, and is right only when both come
   from the same close: on 11-23 the tab showed $20,559.48 because the balance
-  was Friday's close but the holdings were older. Open question: price and
-  reconcile both at one close. Don't switch to `available`.
+  was Friday's close but the holdings were older. Open question: reconcile both at one
+  close. Don't switch to `available`.
 - Delivery of the transactions webhook hasn't been observed in production yet.
   Opening the tab and the daily run cover for it.
 

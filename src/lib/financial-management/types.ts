@@ -54,6 +54,9 @@ export interface Security {
   tickerSymbol: string | null;
   name: string;
   isCashEquivalent: boolean;
+  /** Latest market close; null for securities with no public price. Absent on snapshots stored before this existed. */
+  closePrice?: number | null;
+  closePriceAsOf?: string | null;
 }
 
 export interface Account {
@@ -123,6 +126,8 @@ export interface HoldingsSnapshot {
   securities: Security[];
   totalValue: number;
   lastSyncedAt: string;
+  /** When Plaid last refreshed positions from the institution — the real age of quantities and cash. */
+  positionsUpdatedAt?: string | null;
 }
 
 /**
@@ -159,6 +164,8 @@ export interface UnifiedHolding {
   value: number;
   currency: Currency;
   valueUsd: number;
+  /** Date of the market close this row is priced at; null when priced by the institution or by hand. */
+  closeDate: string | null;
 }
 
 export interface View {
