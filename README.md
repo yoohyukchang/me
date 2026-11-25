@@ -22,7 +22,7 @@ src/app/                         routes (pages + API route handlers)
 src/components/                  React components (home/, projects/, financial-management/)
 src/lib/financial-management/    all financial-management logic (types, providers, integrator, store)
 src/middleware.ts                session-cookie gate for /financial-management and its API
-infra/                           AWS CDK app: DynamoDB tables, KMS key, sync Lambda, schedules
+infra/                           AWS CDK app: DynamoDB tables, sync Lambda, schedules
 tests/                           node:test unit tests for the pure financial-management functions
 docs/                            design docs
 ```

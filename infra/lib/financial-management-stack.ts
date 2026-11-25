@@ -3,7 +3,6 @@ import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as iam from "aws-cdk-lib/aws-iam";
-import * as kms from "aws-cdk-lib/aws-kms";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as nodejs from "aws-cdk-lib/aws-lambda-nodejs";
 import * as scheduler from "aws-cdk-lib/aws-scheduler";
@@ -25,22 +24,13 @@ export class FinancialManagementStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // Access tokens are the most sensitive thing this app stores, so they
-    // get a dedicated customer-managed key instead of the default table
-    // encryption the other tables use.
-    const plaidItemsKey = new kms.Key(this, "PlaidItemsKey", {
-      description: "Encrypts FinancialPlaidItems (Plaid access tokens)",
-      alias: "financial-management-plaid-items",
-      enableKeyRotation: true,
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
-    });
-
     const plaidItemsTable = new dynamodb.Table(this, "PlaidItemsTable", {
       tableName: "FinancialPlaidItems",
+      // Holds Plaid access tokens. Default encryption (free): a dedicated key
+      // cost $1+/month, and everyone with table access had the key anyway.
+      encryption: dynamodb.TableEncryption.DEFAULT,
       partitionKey: { name: "itemId", type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      encryption: dynamodb.TableEncryption.CUSTOMER_MANAGED,
-      encryptionKey: plaidItemsKey,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
@@ -180,7 +170,6 @@ export class FinancialManagementStack extends cdk.Stack {
     });
 
     for (const table of tables) table.grantReadWriteData(syncFunction);
-    plaidItemsKey.grantEncryptDecrypt(syncFunction);
 
     // EventBridge Scheduler (not a plain cron Rule) for its native retry
     // policy + DLQ — "retry until it succeeds" needs that, a Rule doesn't
@@ -218,13 +207,12 @@ export class FinancialManagementStack extends cdk.Stack {
 
     // Scoped-down IAM user for the Next.js app (running on Vercel). It runs
     // the same integrator code as the Lambda (post-link, webhook, and
-    // expense syncs), so it needs the same table/KMS access — no console access, no
+    // expense syncs), so it needs the same table access — no console access, no
     // other AWS permissions.
     const appUser = new iam.User(this, "AppUser", {
       userName: "financial-management-app",
     });
     for (const table of tables) table.grantReadWriteData(appUser);
-    plaidItemsKey.grantEncryptDecrypt(appUser);
 
     // CDK would otherwise generate these names with a random suffix.
     (syncFunction.role!.node.defaultChild as iam.CfnRole).roleName = "financial-management-sync";

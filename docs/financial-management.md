@@ -64,7 +64,7 @@ folder and add a case in `integrator/sync.ts`. Everything above that layer
 
 | Table | Key | Purpose |
 |---|---|---|
-| `FinancialPlaidItems` | `itemId` | One row per linked institution: access token (KMS-encrypted), status, current balance (depository items), vested-share tracking (the Fidelity item), expense cursor and known/missing accounts (bank items). |
+| `FinancialPlaidItems` | `itemId` | One row per linked institution: access token, status, current balance (depository items), vested-share tracking (the Fidelity item), expense cursor and known/missing accounts (bank items). |
 | `FinancialHoldingsViews` | `id` | Named groupings of holdings ("By Category", or whatever you add). |
 | `FinancialHoldingsViewCategories` | `viewId`, `id` | Categories, scoped per view. |
 | `FinancialHoldingsAssignments` | `viewId`, `holdingKey` | Which category a holding sits in, per view. No row = Uncategorized, computed at read time. |
@@ -400,9 +400,11 @@ Plaid `client_id`/`secret` are plain env vars on both Vercel and the Lambda
 (mirroring how the DynamoDB IAM credentials were already handled in this
 app) — Investments/Balance are read-only products, so this matches the
 existing risk posture. Plaid access tokens, the one genuinely sensitive
-secret this app stores, live only in `FinancialPlaidItems`, which has its
-own customer-managed KMS key — a tier above the default encryption the
-other tables use.
+secret this app stores, live only in `FinancialPlaidItems`, under DynamoDB's
+default encryption like every other table. It had its own customer-managed KMS
+key until 2026-11-24; that cost $1+/month and protected little, since
+everyone with table access also held the key. If a token may have leaked,
+revoke it with `/item/remove` (or Disconnect) and link the bank again.
 
 ## Operations runbook
 
