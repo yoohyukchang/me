@@ -110,7 +110,7 @@ export async function syncAllItems(): Promise<void> {
   await Promise.all(items.map(syncItem));
 }
 
-/** The daily run: refreshes the Portfolio Holdings snapshot only. */
+/** The weekday evening run: refreshes the Portfolio Holdings snapshot only. */
 export async function refreshInvestmentHoldings(): Promise<void> {
   const items = await plaidItemsStore.listPlaidItems();
   await Promise.all(items.filter((item) => item.product === "investments").map(syncItem));

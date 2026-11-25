@@ -1,9 +1,10 @@
 # Financial Management
 
 `/financial-management` is a password-gated personal page. Chase, Bank of
-America, and Fidelity are linked via Plaid; an AWS Lambda refreshes
-holdings daily and records the weekly History/Net Worth snapshots every
-Saturday, writing to DynamoDB. The page itself never
+America, and Fidelity are linked via Plaid; an AWS Lambda
+refreshes holdings every weekday evening and records the History/Net Worth
+snapshots every Saturday, and a Plaid webhook refreshes holdings as soon as
+there is new data. Everything is written to DynamoDB. The page itself never
 calls Plaid directly and has no manual "sync" button. Two things stay
 intentionally manual, by design: categorizing holdings (a judgment call
 Plaid can't make), and tracking contributions and any holding outside the
@@ -46,7 +47,7 @@ infra/lib/financial-management-stack.ts  tables, Lambda, EventBridge Scheduler
 ```
 
 The Lambda and the Next.js API routes both call into `integrator/sync.ts` —
-the Lambda on its daily/weekly schedules, the API routes once inline right
+the Lambda on its evening/weekly schedules, the API routes once inline right
 after a Plaid Item is linked or reconnected (`syncAllItems()`, so the page
 reflects it immediately). Only the Saturday run (`runWeeklySnapshot()`)
 ever writes Portfolio History or Net Worth, so both stay strictly weekly. Nothing outside `providers/plaid/`
@@ -67,7 +68,7 @@ folder and add a case in `integrator/sync.ts`. Everything above that layer
 | `FinancialHoldingsViews` | `id` | Named groupings of holdings ("By Category", or whatever you add). |
 | `FinancialHoldingsViewCategories` | `viewId`, `id` | Categories, scoped per view. |
 | `FinancialHoldingsAssignments` | `viewId`, `holdingKey` | Which category a holding sits in, per view. No row = Uncategorized, computed at read time. |
-| `FinancialHoldingsCurrent` | fixed `"current"` | Latest Fidelity accounts/holdings/securities blob, overwritten daily. |
+| `FinancialHoldingsCurrent` | fixed `"current"` | Latest Fidelity accounts/holdings/securities blob, overwritten by every sync. |
 | `FinancialExpenseTransactions` | `transactionId` | The expense ledger: Plaid transaction id, or `manual_<uuid>` for cash. PITR + deletion protection. |
 | `FinancialExpenseCategories` | `categoryId` | Expense categories, unrelated to holdings categories. Can't be deleted while in use. PITR + deletion protection. |
 | `FinancialManualHoldings` | `id` | Holdings maintained by hand — any account Plaid can't reach, in whichever currency it's actually held in. |
@@ -280,8 +281,8 @@ AWS resources and Plaid Items have been deleted.
 ### Flow
 
 1. A sync runs per bank Item: on the `TRANSACTIONS/SYNC_UPDATES_AVAILABLE`
-   webhook, when the Expenses tab opens (or its Sync button), and daily in
-   the Lambda. All call `syncItemExpenses()` (`integrator/expense-sync.ts`).
+   webhook, when the Expenses tab opens (or its Sync button), and in
+   every scheduled Lambda run. All call `syncItemExpenses()` (`integrator/expense-sync.ts`).
 2. It claims a 90s lock on the Item, fetches accounts and `/transactions/sync`
    changes (neither billed per call), and passes them with the stored ledger
    to the pure `planExpenseSync()` (`expenses.ts`), which returns the writes.
@@ -347,10 +348,9 @@ different account selection can invalidate the first); BofA behaved the same.
 ## Schedule & failure handling
 
 EventBridge Scheduler (not a plain cron Rule — it has a native retry
-policy) invokes `financial-management-sync` with `{"mode":"daily"}` at 13:00
-UTC Sunday–Friday and at 9pm `America/Los_Angeles` Monday–Friday (refresh the
-holdings snapshot; the evening run picks up that day's closes), and with
-`{"mode":"weekly"}` on Saturday at 3pm `America/Los_Angeles` (sync every Item,
+policy) invokes `financial-management-sync` with `{"mode":"daily"}` at 9pm
+`America/Los_Angeles` Monday–Friday (refresh the holdings snapshot with that
+day's closes), and with `{"mode":"weekly"}` on Saturday at 3pm `America/Los_Angeles` (sync every Item,
 then record Portfolio History and Net Worth). Rows are dated in UTC, so a
 weekly retry after midnight UTC (4pm PST / 5pm PDT) would be dated Sunday.
 Both modes end with an expense sync, even if the first part failed. Failed invocations retry up to
@@ -370,7 +370,7 @@ market day, at a varying time, and sends `HOLDINGS` and
 together within a second. `plaid/webhook/route.ts` resyncs the Fidelity Item
 on each (`classifyItemWebhook`'s `data_ready`). This rewrites
 `FinancialHoldingsCurrent` and, as in any sync, upserts imported contributions
-and vests; it never writes History or Net Worth. The daily run is the
+and vests; it never writes History or Net Worth. The 9pm run is the
 fallback, and a webhook whose sync failed isn't retried by Plaid, only by that
 run. It also closes the gap when a new Item's holdings lag its transactions
 feed. Before 2026-11-24 these webhooks were ignored once holdings existed: an
@@ -542,7 +542,7 @@ netted account total.
   was Friday's close but the holdings were older. Open question: reconcile both at one
   close. Don't switch to `available`.
 - Delivery of the transactions webhook hasn't been observed in production yet.
-  Opening the tab and the daily run cover for it.
+  Opening the tab and the scheduled runs cover for it.
 
 - XIRR on Portfolio History is deferred: a test calculation gave 445%
   because contributions were lumped on one date. Contributions now carry

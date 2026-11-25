@@ -77,7 +77,7 @@ export type ItemWebhookOutcome =
  * Classifies the subset of Plaid webhooks this app reacts to.
  *
  * "data_ready" keeps Holdings current: Plaid refreshes Fidelity at a varying
- * time (often after the 13:00 UTC daily run), and a brand-new Item's holdings
+ * time each market day, and a brand-new Item's holdings
  * can lag its transactions by minutes. Resyncing on the HOLDINGS/
  * INVESTMENTS_TRANSACTIONS update webhooks picks up both.
  */
