@@ -88,7 +88,7 @@ Two different Plaid endpoints feed it, on purpose:
 | Where | Endpoint | Freshness |
 |---|---|---|
 | Portfolio Holdings tab (per-security rows, pie chart) | `/investments/holdings/get` | Plaid's cached daily extraction; prices can lag Fidelity by ~1 trading day. The tab shows "Prices as of" from `institution_price_as_of`. Not billed per call. |
-| Portfolio History / Net Worth (Saturday) | `/accounts/balance/get` → `balances.current` per account | Live from Fidelity at call time. Billed per call, so only the weekly run uses it. |
+| Portfolio History / Net Worth (Saturday) | `/accounts/balance/get` → `balances.current` per account | Fidelity's latest published close, fetched at call time. Billed per call, so only the weekly run uses it. |
 
 So the Holdings tab total and the latest History value can differ slightly;
 History is the one that matches Fidelity's own "Total account value".
@@ -325,10 +325,11 @@ different account selection can invalidate the first); BofA behaved the same.
 ## Schedule & failure handling
 
 EventBridge Scheduler (not a plain cron Rule — it has a native retry
-policy) invokes `financial-management-sync` at 13:00 UTC every day: with
-`{"mode":"daily"}` Sunday–Friday (refresh the holdings snapshot), and
-with `{"mode":"weekly"}` on Saturday, safely after Friday's close and
-settlement (sync every Item, then record Portfolio History and Net Worth).
+policy) invokes `financial-management-sync` with `{"mode":"daily"}` at 13:00
+UTC Sunday–Friday (refresh the holdings snapshot), and with
+`{"mode":"weekly"}` on Saturday at 3pm `America/Los_Angeles` (sync every Item,
+then record Portfolio History and Net Worth). Rows are dated in UTC, so a
+weekly retry after midnight UTC (4pm PST / 5pm PDT) would be dated Sunday.
 Both modes end with an expense sync, even if the first part failed. Failed invocations retry up to
 10 times over the next 24 hours; if every retry is exhausted, the event
 lands in the `FinancialManagementSyncDLQ` SQS queue instead of vanishing
@@ -353,11 +354,18 @@ feed. Before 2026-11-24 these webhooks were ignored once holdings existed: an
 update at 08:36 PT wasn't shown until 05:00 the next day.
 
 **The weekly snapshot uses live balances, not holdings prices.**
+Fidelity's balance is the last close it has published, not intraday: Monday
+2026-11-23's close was absent at 22:50 PT and present at 08:36 PT the next
+morning. Position × close + cash reproduces account 0094 in the
+2026-11-21 row to the cent ($86,708.73, Friday's close, trades included); the
+401(k) part has no public quotes to check against. Whether a close is there by
+5am PT is unknown, hence the 3pm run.
+
 `/investments/holdings/get` returns Plaid's cached daily extraction, and
 its prices can lag the institution by a day — confirmed against a real
 account, where it overstated Fidelity by ~$4.4k versus Fidelity's own
 total. So `runWeeklySnapshot()` values each investment account at
-`/accounts/balance/get`'s live `current` instead (billed per call, so only
+`/accounts/balance/get`'s `current` instead (billed per call, so only
 once a week). A stock-plan account's live balance includes unvested
 shares, so it's scaled by the counted/full value ratio the holdings sync
 applied. The Portfolio Holdings tab keeps the cached prices and shows
@@ -455,7 +463,7 @@ Fidelity Item `6wJ68xEALqSeN37EJAEEsEzBPgnMr5U0jQO9R` exposes four accounts:
 
 | Mask | Name | Plaid subtype | Notes |
 |---|---|---|---|
-| 0094 | Individual - TOD | brokerage | Main taxable account. Core cash is SPAXX, which Plaid does **not** itemize — it appears via `reconcileCashHoldings`, and equals `balances.available` when prices and balance are from the same day (see Open items). Opened 2025-10-14, so `/investments/transactions/get` over 24 months covers its full history. |
+| 0094 | Individual - TOD | brokerage | Main taxable account. Core cash is SPAXX, which Plaid does **not** itemize — it appears via `reconcileCashHoldings`, and is not the same as `balances.available` (see Open items). Opened 2025-10-14, so `/investments/transactions/get` over 24 months covers its full history. |
 | 2233 | AMAZON 401(K) PLAN | 401k | Collective trust funds (`SSGA.LG.CAP.GROWTH`, `VANG.INST.500.IDX.TR`) — no public tickers, so no external quote source can price them. |
 | 4441 | AMAZON RSU | `stock plan` in holdings, `brokerage` in balance/get | Full grant (vested + unvested). Counted at **$0** today: no `transfer`/`transfer` vest transactions have been seen, so `vestedSharesByAccount` is empty. The owner confirmed on 2026-11-23 that nothing has vested. Verify vest detection when the next vest lands. |
 | 8139 | Individual - TOD | brokerage | Empty ($0). |
@@ -505,15 +513,13 @@ netted account total.
   labelled 11-24 were 11-23 closes: "Prices as of" is the update date, not the
   price date. Trades show only after Plaid's next update (the 11-20 buys
   appeared on 11-24).
-- **`/accounts/balance/get` isn't live for Fidelity.** It returned exactly the
-  cached values on 11-23 and 11-24, so the Saturday snapshot can miss Friday's
-  close (the 11-21 row came from a Friday 09:55 PT update). Not changed.
-- **Cash can be wrong on the Holdings tab.** `reconcileCashHoldings` subtracts
-  cached-price holdings from a balance that may be from another day. On 11-23
-  it showed about $20,559 against $24,830.22 in `balances.available`. Totals
-  still match the balance; on 11-24, with both from one update, it was exact.
-  Proposed, not decided: price holdings with Yahoo
-  closes and take cash from `available` (401(k) funds have no public quote).
+- **`balances.available` is not the cash to show.** On 2026-11-21 it read
+  $24,830.22 while $7,601.01 of Friday buys were unsettled; actual cash was
+  $17,229.21 (the balance minus all positions at the close). Cash is
+  `balances.current − itemized holdings`, and is right only when both come
+  from the same close: on 11-23 the tab showed $20,559.48 because the balance
+  was Friday's close but the holdings were older. Open question: price and
+  reconcile both at one close. Don't switch to `available`.
 - Delivery of the transactions webhook hasn't been observed in production yet.
   Opening the tab and the daily run cover for it.
 

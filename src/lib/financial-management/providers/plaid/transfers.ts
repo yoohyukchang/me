@@ -4,8 +4,8 @@ import { plaidClient } from "./client";
 // /accounts/balance/get fetches the live balance directly from the
 // institution and is always available regardless of which product the
 // Item was linked with. Unlike /investments/holdings/get (Plaid's cached
-// daily extraction, whose prices can lag a day), this is meant to be the
-// institution's current value, though Fidelity has returned a stale one.
+// daily extraction, whose prices can lag a day), this reflects the
+// institution's current value. For Fidelity that is its last published close.
 export const plaidBalanceProvider: BalanceProvider = {
   async fetchAccountBalances(accessToken) {
     const response = await plaidClient.accounts.getBalance({ access_token: accessToken });

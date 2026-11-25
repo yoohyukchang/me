@@ -184,9 +184,10 @@ export class FinancialManagementStack extends cdk.Stack {
 
     // EventBridge Scheduler (not a plain cron Rule) for its native retry
     // policy + DLQ — "retry until it succeeds" needs that, a Rule doesn't
-    // have it. Saturday 13:00 UTC: safely after Friday close + settlement —
-    // the weekly run refreshes holdings and records History/Net Worth; the
-    // other six days only refresh holdings. Every run also syncs expenses.
+    // have it. Saturday 3pm Pacific leaves a wide margin for Friday's close,
+    // which reaches Plaid overnight, and is still Saturday in UTC, which dates
+    // the rows. That run records History/Net Worth; every run refreshes
+    // holdings and syncs expenses.
     const schedulerRole = new iam.Role(this, "SchedulerRole", {
       roleName: "financial-management-scheduler",
       assumedBy: new iam.ServicePrincipal("scheduler.amazonaws.com"),
@@ -194,14 +195,14 @@ export class FinancialManagementStack extends cdk.Stack {
     syncFunction.grantInvoke(schedulerRole);
 
     const schedules = [
-      { id: "WeeklySyncSchedule", name: "financial-management-weekly-sync", cron: "cron(0 13 ? * SAT *)", mode: "weekly" },
-      { id: "DailyHoldingsSchedule", name: "financial-management-daily-holdings", cron: "cron(0 13 ? * SUN-FRI *)", mode: "daily" },
+      { id: "WeeklySyncSchedule", name: "financial-management-weekly-sync", cron: "cron(0 15 ? * SAT *)", timezone: "America/Los_Angeles", mode: "weekly" },
+      { id: "DailyHoldingsSchedule", name: "financial-management-daily-holdings", cron: "cron(0 13 ? * SUN-FRI *)", timezone: "UTC", mode: "daily" },
     ];
     for (const s of schedules) {
       new scheduler.CfnSchedule(this, s.id, {
         name: s.name,
         scheduleExpression: s.cron,
-        scheduleExpressionTimezone: "UTC",
+        scheduleExpressionTimezone: s.timezone,
         flexibleTimeWindow: { mode: "OFF" },
         target: {
           arn: syncFunction.functionArn,
