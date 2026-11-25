@@ -76,13 +76,10 @@ export type ItemWebhookOutcome =
 /**
  * Classifies the subset of Plaid webhooks this app reacts to.
  *
- * "data_ready" matters more than it looks: a brand-new Fidelity Item's
- * holdings snapshot can lag its investment-transactions feed by minutes
- * (confirmed against real data — /investments/holdings/get returned empty
- * right after linking even though /investments/transactions/get already
- * had 148 real transactions). Resyncing on HOLDINGS/INVESTMENTS_TRANSACTIONS
- * update webhooks means that gap closes itself instead of sitting empty
- * until the next scheduled Saturday run.
+ * "data_ready" keeps Holdings current: Plaid refreshes Fidelity at a varying
+ * time (often after the 13:00 UTC daily run), and a brand-new Item's holdings
+ * can lag its transactions by minutes. Resyncing on the HOLDINGS/
+ * INVESTMENTS_TRANSACTIONS update webhooks picks up both.
  */
 export function classifyItemWebhook(body: Record<string, unknown>): ItemWebhookOutcome {
   const webhookType = body.webhook_type;

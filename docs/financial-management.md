@@ -340,16 +340,17 @@ institution; a healthy connection also offers "Manage accounts" (banks) or
 account you didn't originally share, and "Disconnect" to cleanly remove a connection (calls `/item/remove`, not just
 a local delete).
 
-**A brand-new Fidelity Item's holdings can lag its own transactions feed.**
-Plaid's holdings-snapshot extraction is a separate, slower pipeline than
-investment-transactions extraction. `plaid/webhook/route.ts` resyncs the
-specific Item on `HOLDINGS`/`INVESTMENTS_TRANSACTIONS` `DEFAULT_UPDATE` or
-`HISTORICAL_UPDATE` webhooks (`classifyItemWebhook`'s `data_ready`
-outcome), so this closes itself out within minutes of linking instead of
-sitting empty until the next Saturday. That resync only runs while the
-stored holdings snapshot is still empty — Plaid sends these webhooks on
-every daily refresh, and once holdings exist they should only change on
-the scheduled runs.
+**Holdings refresh when Plaid does.** Plaid updates Fidelity about once per
+market day, at a varying time, and sends `HOLDINGS` and
+`INVESTMENTS_TRANSACTIONS` `DEFAULT_UPDATE`/`HISTORICAL_UPDATE` webhooks
+together within a second. `plaid/webhook/route.ts` resyncs the Fidelity Item
+on each (`classifyItemWebhook`'s `data_ready`). This rewrites
+`FinancialHoldingsCurrent` and, as in any sync, upserts imported contributions
+and vests; it never writes History or Net Worth. The daily run is the
+fallback, and a webhook whose sync failed isn't retried by Plaid, only by that
+run. It also closes the gap when a new Item's holdings lag its transactions
+feed. Before 2026-11-24 these webhooks were ignored once holdings existed: an
+update at 08:36 PT wasn't shown until 05:00 the next day.
 
 **The weekly snapshot uses live balances, not holdings prices.**
 `/investments/holdings/get` returns Plaid's cached daily extraction, and
@@ -498,17 +499,20 @@ netted account total.
 
 ## Open items
 
-- **Fidelity data was stale on 2026-11-23.** After Monday's close Plaid's last
-  successful update was still 11-20 09:55 PT, and even `/accounts/balance/get`
-  matched Saturday's value to the cent ($88,894.44; repricing at the 11-23
-  close gives about $94,650). Holdings prices labelled 11-20 were really 11-19
-  closes, so "Prices as of" isn't reliable. To tell lag from a stuck
-  connection, see whether `/item/get` `status.investments` advances after a
-  trading day; if not, Reconnect.
+- **Fidelity data lags about a trading day.** Plaid didn't update at all on
+  Monday 2026-11-23; the next update came 11-24 08:36 PT and matched the
+  Fidelity app's 11-23 close to the cent, so no Reconnect was needed. Prices
+  labelled 11-24 were 11-23 closes: "Prices as of" is the update date, not the
+  price date. Trades show only after Plaid's next update (the 11-20 buys
+  appeared on 11-24).
+- **`/accounts/balance/get` isn't live for Fidelity.** It returned exactly the
+  cached values on 11-23 and 11-24, so the Saturday snapshot can miss Friday's
+  close (the 11-21 row came from a Friday 09:55 PT update). Not changed.
 - **Cash can be wrong on the Holdings tab.** `reconcileCashHoldings` subtracts
   cached-price holdings from a balance that may be from another day. On 11-23
   it showed about $20,559 against $24,830.22 in `balances.available`. Totals
-  still match the balance. Proposed, not decided: price holdings with Yahoo
+  still match the balance; on 11-24, with both from one update, it was exact.
+  Proposed, not decided: price holdings with Yahoo
   closes and take cash from `available` (401(k) funds have no public quote).
 - Delivery of the transactions webhook hasn't been observed in production yet.
   Opening the tab and the daily run cover for it.
